@@ -12,7 +12,7 @@ import shutil
 from functools import lru_cache
 from typing import Literal
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from PIL import Image, ImageOps
@@ -104,12 +104,14 @@ class LayerEdit(BaseModel):
     model_config = ConfigDict(extra="forbid")
     visible: bool | None = None
     locked: bool | None = None
+    deleted: bool | None = None
     text_runs: list[TextRun] | None = Field(default=None, max_length=100)
     text_effects: TextEffects | None = None
     text: str | None = Field(default=None, max_length=2000)
     x: int | None = Field(default=None, ge=-10000, le=10000)
     y: int | None = Field(default=None, ge=-10000, le=10000)
     opacity: float | None = Field(default=None, ge=0, le=1)
+    blend_mode: Literal['NORMAL', 'MULTIPLY', 'SCREEN', 'OVERLAY', 'DARKEN', 'LIGHTEN', 'SOFT_LIGHT'] | None = None
     width: int | None = Field(default=None, ge=1, le=4096)
     height: int | None = Field(default=None, ge=1, le=4096)
     rotation: float | None = Field(default=None, ge=-360, le=360)
@@ -211,6 +213,16 @@ def catalog(profile_id: str):
     active = template_store.active_set(MAGAZINES_DIR.parent, profile_id, cfg.get('template', {}).get('approved_set'))
     history = [json.loads(p.read_text(encoding='utf-8')) for p in folder(profile_id).glob('*/versions/*.json')]
     slots = {role: dict(active.get(role) or {}) for role in ('cover', 'body', 'cta')}
+    for spec in slots.values():
+        if spec.get('renderer') != 'template-lab' or not spec.get('draft_id'):
+            continue
+        draft = detail(folder(profile_id, spec['draft_id']))
+        saved = json.loads((Path(spec['bundle_path']) / 'edits.json').read_text(encoding='utf-8'))
+        default_order = [layer['id'] for layer in draft['layers']]
+        spec['draft_matches_active'] = all(
+            draft['edits'].get(key, default) == saved.get(key, default)
+            for key, default in [('changes', {}), ('order', default_order)]
+        )
     cover = slots['cover']
     box = cover.get('accent_layer') or cover.get('text_options', {}).get('eyebrow', {}).get('align_to_layer')
     if box and cover.get('bundle_path'):
@@ -291,7 +303,7 @@ def templates(profile_id: str):
 
 
 @router.post("/{profile_id}")
-async def upload(profile_id: str, file: UploadFile = File(...)):
+async def upload(profile_id: str, file: UploadFile = File(...), role: Literal['cover', 'body', 'cta'] | None = Form(None)):
     root = folder(profile_id)
     if Path(file.filename or "").suffix.lower() != ".psd":
         raise HTTPException(400, "PSD 파일을 선택하세요.")
@@ -303,11 +315,14 @@ async def upload(profile_id: str, file: UploadFile = File(...)):
             with _lock:
                 digest = hashlib.sha256(source.read_bytes()).hexdigest()
                 for manifest in root.glob('*/draft/template.json'):
-                    if json.loads(manifest.read_text(encoding='utf-8')).get('source_sha256') == digest:
+                    existing = json.loads(manifest.read_text(encoding='utf-8'))
+                    if existing.get('source_sha256') == digest and existing.get('role') == role:
                         return detail(manifest.parent)
                 data = import_psd(source, root / key / 'draft', Path(file.filename).stem)
                 original = template_store.preserve_original(MAGAZINES_DIR.parent, source, file.filename)
                 data.update(schema_version=1, original_id=original, source_sha256=digest)
+                if role:
+                    data.update(role=role, name=f"{ {'cover': '표지', 'body': '본문', 'cta': 'CTA'}[role]} · {data['name']}")
                 _atomic_json(root / key / 'draft' / 'template.json', data)
             return detail(root / key / 'draft')
         return await asyncio.to_thread(convert)
@@ -434,6 +449,9 @@ def publish(profile_id: str, template_id: str, payload: Publish):
             raise HTTPException(409, '사용 중인 템플릿이 변경됐습니다. 목록을 새로 불러오세요.')
         layers = {l['id']: l for l in data['layers']}
         saved = data['edits']
+        mapped = [payload.text_layer, payload.image_layer, payload.eyebrow_layer, payload.caption_layer, payload.badge_layer]
+        if any(saved.get('changes', {}).get(key, {}).get('deleted') for key in mapped if key):
+            raise HTTPException(400, '삭제된 레이어는 제작에 연결할 수 없습니다. 레이어 매핑을 다시 선택하세요.')
         if payload.role != 'cta':
             text_layer, photo = layers.get(payload.text_layer, {}), layers.get(payload.image_layer, {})
             if not text_layer.get('text_editable') or photo.get('kind') not in {'pixel', 'smartobject'}:

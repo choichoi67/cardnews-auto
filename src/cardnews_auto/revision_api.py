@@ -295,7 +295,8 @@ def rewrite_artifact_text(artifact_id: int, payload: RevisionInput) -> dict:
     cfg = profile_config(profile(record["magazine_id"]))
     article = _artifact_source(record, profile(record["magazine_id"]))
     try:
-        return rewrite_slide_text(slide, payload.instruction, article, cfg, spec).model_dump()
+        return rewrite_slide_text(slide, payload.instruction, article, cfg, spec,
+                                  card=card, slide_index=payload.slide_number - 1).model_dump()
     except RuntimeError as exc:
         raise HTTPException(422, f"PSD 규격에 맞는 수정안이 필요합니다: {exc}") from exc
     except Exception as exc:

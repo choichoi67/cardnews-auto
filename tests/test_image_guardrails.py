@@ -78,7 +78,7 @@ def test_generated_size_is_verified_and_retried_only_once(monkeypatch, tmp_path,
     def edit(**kwargs):
         calls.append(kwargs)
         result = BytesIO()
-        Image.new("RGB", (1024,1536) if len(calls) == 1 else second_size).save(result, "PNG")
+        Image.new("RGB", (1024,1536) if len(calls) == 1 else second_size, "blue").save(result, "PNG")
         return SimpleNamespace(data=[SimpleNamespace(b64_json=base64.b64encode(result.getvalue()).decode())])
     monkeypatch.setattr(render, "OpenAI", lambda **_: SimpleNamespace(images=SimpleNamespace(edit=edit)))
     options = {"enabled": True, "size": "1536x2048", "quality": "high", "fallback_quality": "", "prompt": render.SHARED_COMPOSITION_PROMPT}
@@ -127,14 +127,14 @@ def test_missing_photo_recovers_with_distinct_candidate(monkeypatch, tmp_path):
     assert audit[-1]['status']=='selected'
 
 
-def test_recovery_search_keeps_official_and_relevance_filters(monkeypatch):
+def test_recovery_search_allows_all_sources_without_keyword_gate(monkeypatch):
     monkeypatch.setattr(image_sources,"_openai_image_search",lambda *a:[
         {"url":"https://club.test/unique.jpg","page_url":"https://athletic-club.eus/news","caption":"Williams striker official"},
-        {"url":"https://other.test/unrelated.jpg","page_url":"https://athletic-club.eus/news","caption":"Other athlete"},
+        {"url":"https://other.test/unrelated.jpg","page_url":"https://athletic-club.eus/news","caption":""},
         {"url":"https://espn.com/photo.jpg","page_url":"https://espn.com/news","caption":"Williams striker"}])
     slide=Slide(title="",body="",image_query="Williams striker")
     result=image_sources.search_alternative_images(slide,Article(title="1면",url="https://example.com"),{"web_search":{"official_only":True}},[])
-    assert [row['url'] for row in result]==["https://club.test/unique.jpg"]
+    assert [row['url'] for row in result]==["https://club.test/unique.jpg", "https://other.test/unrelated.jpg", "https://espn.com/photo.jpg"]
 
 
 def test_recovery_broadens_only_approved_subject_and_labels_context(monkeypatch):
@@ -142,12 +142,12 @@ def test_recovery_broadens_only_approved_subject_and_labels_context(monkeypatch)
     def search(query,*args):
         requests.append(query)
         return [{"url":"https://example.com/doechii.jpg","caption":"Doechii portrait","provider":"openai_web_search"},
-                {"url":"https://example.com/other.jpg","caption":"Unrelated person","provider":"openai_web_search"}]
+                {"url":"https://example.com/other.jpg","caption":"","provider":"openai_web_search"}]
     monkeypatch.setattr(image_sources,"_openai_image_search",search)
     slide=Slide(role="cover",title="영상",body="",image_query="Doechii Bombs music video breastplate sparklers")
     article=Article(title="Doechii 데뷔 앨범",url="https://example.com/article")
     results=image_sources.search_alternative_images(slide,article,{},[])
-    assert len(results)==1 and results[0]['provider'].endswith(':subject_context')
+    assert len(results)==2 and results[0]['provider'].endswith(':subject_context')
     assert "Do not require the exact outfit" in requests[0]
     requests.clear()
     image_sources.search_alternative_images(Slide(**slide.model_dump()),Article(title="Other topic",url=article.url),{},[])

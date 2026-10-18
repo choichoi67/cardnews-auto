@@ -30,7 +30,7 @@ from .workflow import (
     save_candidates,
     _write_state,
 )
-from .writer import DEFAULT_BODY_PROMPT, DEFAULT_COVER_PROMPT, clean_caption, create_cardnews
+from .writer import clean_caption, create_cardnews
 
 
 def _unique_output_dir(config_path: Path, folder_name: str) -> Path:
@@ -168,9 +168,7 @@ def _build(
             f"{instruction}\n"
             "원 기사의 사실과 고유명사·수치·인과관계는 유지하면서 요청한 표현과 구성만 수정하세요."
         )
-        prompt_defaults = {"cover_prompt": DEFAULT_COVER_PROMPT, "body_prompt": DEFAULT_BODY_PROMPT, "caption_prompt": ""}
-        for key in prompt_defaults:
-            generation[key] = (str(generation.get(key) or "").strip() or prompt_defaults[key]) + revision_rule
+        generation['_revision_instruction'] = instruction
         if not slide_edit_mode:
             transform = build_cfg.setdefault("image_transform", {})
             transform["prompt"] = str(transform.get("prompt") or "") + revision_rule

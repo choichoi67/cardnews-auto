@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NOWA · 템플릿 랩</title>
-  <link rel="stylesheet" href="/template-lab-photocraft.css?v=1">
+  <link rel="stylesheet" href="/template-lab-photocraft.css?v=panels-4">
 </head>
 <body>
   <a class="skip-link" href="#lab-stage">편집 캔버스로 이동</a>
@@ -12,13 +12,12 @@
     <a class="pc-brand" href="/" aria-label="NOWA 편집국으로 돌아가기">N<span>NOWA <small>TEMPLATE LAB</small></span></a>
     <nav aria-label="편집기 메뉴">
       <button type="button" data-dialog="pc-library">파일 · 보관함</button>
-      <button type="button" data-dialog="pc-versions">채널 버전</button>
       <button type="button" data-dialog="pc-help">도움말</button>
     </nav>
-    <div class="pc-header-actions"><label class="pc-channel">채널<select id="lab-channel" aria-label="편집할 채널" required></select></label><a href="/template-studio.html">기존 편집기</a></div>
+    <div class="pc-header-actions"><a href="/">편집국으로 돌아가기</a></div>
   </header>
   <div class="pc-options" aria-label="편집 도구 옵션">
-    <span class="pc-mode">레이어 편집</span>
+    <span class="pc-mode" id="pc-tool-name">이동 · V</span>
     <button id="lab-undo" type="button" data-document disabled title="실행 취소">↶ <span>실행 취소</span></button>
     <button id="lab-redo" type="button" data-document disabled title="다시 실행">↷ <span>다시 실행</span></button>
     <span class="pc-divider"></span>
@@ -30,38 +29,54 @@
     <aside class="pc-tools" aria-label="레이어 편집 바로가기">
       <button type="button" data-dialog="pc-library" aria-label="PSD 가져오기" title="PSD 가져오기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 3h9l-2 10H3zM3 7V4h7l2 3h8v3"/></svg></button>
       <span class="pc-tool-separator"></span>
-      <button type="button" data-focus="x" data-document disabled aria-label="선택 레이어 위치 편집" title="위치 편집"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg></button>
-      <button type="button" data-focus="text" data-document disabled aria-label="선택 레이어 글자 편집" title="글자 레이어를 선택한 뒤 편집"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h16v3M12 4v16M8 20h8"/></svg></button>
-      <button type="button" data-focus="photo" data-document disabled aria-label="선택 레이어 사진 교체" title="사진 레이어를 선택한 뒤 교체"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="2"/><path d="m3 17 5-5 4 4 4-6 5 7"/></svg></button>
-      <button type="button" data-focus="width" data-document disabled aria-label="선택 레이어 크기 편집" title="크기 편집"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5M4 4l6 6M20 20l-6-6"/></svg></button>
+      <button type="button" data-tool="move" aria-pressed="true" data-document disabled aria-label="이동" title="이동 (V)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg><small>이동</small></button>
+      <button type="button" data-tool="text" aria-pressed="false" data-document disabled aria-label="글자" title="글자 (T)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h16v3M12 4v16M8 20h8"/></svg><small>글자</small></button>
+      <button type="button" data-tool="photo" aria-pressed="false" data-document disabled aria-label="사진 교체" title="사진 교체 (P)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="2"/><path d="m3 17 5-5 4 4 4-6 5 7"/></svg><small>사진 교체</small></button>
+      <button type="button" data-tool="transform" aria-pressed="false" data-document disabled aria-label="크기·회전" title="크기·회전 (F)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5M4 4l6 6M20 20l-6-6"/></svg><small>크기·회전</small></button>
       <span class="pc-tool-separator"></span>
+      <button type="button" data-tool="crop" data-document disabled aria-pressed="false" aria-label="사진 자르기" title="사진 자르기 (C)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v15h15M3 6h15v15"/></svg><small>사진 자르기</small></button>
+      <button type="button" data-tool="shape" data-document disabled aria-pressed="false" aria-label="도형 채우기" title="도형 채우기 (U)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/></svg><small>도형 채우기</small></button>
+      <button type="button" data-tool="gradient" data-document disabled aria-pressed="false" aria-label="그라데이션" title="그라데이션 (G)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v16H3zM8 4v16M13 4v16M18 4v16"/></svg><small>그라데이션</small></button>
+      <button type="button" data-tool="eyedropper" data-document disabled aria-pressed="false" aria-label="색상 추출" title="색상 추출 (I)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 4 6 6M16 2l6 6M15 7 4 18l-1 3 3-1L17 9"/></svg><small>색상 추출</small></button>
+      <button type="button" data-tool="hand" data-document disabled aria-pressed="false" aria-label="화면 이동" title="화면 이동 (H)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12V5a2 2 0 0 1 4 0v6-7a2 2 0 0 1 4 0v7-5a2 2 0 0 1 4 0v9c0 7-10 8-13 3l-4-6 3-2 3 3"/></svg><small>화면 이동</small></button>
+      <button type="button" data-tool="zoom" data-document disabled aria-pressed="false" aria-label="확대·축소" title="확대·축소 (Z)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4a6 6 0 1 0 0 12 6 6 0 0 0 0-12M15 15l6 6M7 10h6M10 7v6"/></svg><small>확대·축소</small></button>
       <button type="button" data-fit data-document disabled aria-label="캔버스를 화면에 맞추기" title="화면 맞춤"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6M7 10h6M10 7v6"/></svg></button>
       <button type="button" data-dialog="pc-help" aria-label="편집 도움말" title="편집 도움말">?</button>
     </aside>
     <section class="pc-empty" aria-labelledby="pc-empty-title">
-      <div class="pc-empty-content"><div class="pc-monogram" aria-hidden="true">N</div><p class="pc-eyebrow">YOUR DESIGN. YOUR CHANNEL.</p><h1 id="pc-empty-title">템플릿 랩</h1><p>PSD의 디자인은 그대로.<br>글자와 사진을 편집하고, 채널의 새 템플릿으로.</p><button class="primary" type="button" data-dialog="pc-library">PSD 열기 · 초안 불러오기</button><small>원본 보관 → 초안 편집 → 버전 저장 · 채널 적용</small><a href="/template-studio.html">기존 편집기에서 이어서 작업하기</a></div>
+      <div class="pc-empty-content"><div class="pc-monogram" aria-hidden="true">N</div><p class="pc-eyebrow">YOUR DESIGN. YOUR CHANNEL.</p><h1 id="pc-empty-title">템플릿 랩</h1><p>PSD의 디자인은 그대로.<br>글자와 사진을 편집하고, 채널의 새 템플릿으로.</p><button class="primary" type="button" data-dialog="pc-library">PSD 열기 · 초안 불러오기</button><small>원본 보관 → 초안 편집 → 버전 저장 · 채널 적용</small><p class="pc-hint">오른쪽에서 채널과 표지 · 본문 · CTA 모듈을 선택하세요.</p></div>
     </section>
     <section id="lab-editor" hidden aria-label="템플릿 편집 작업 공간">
-      <div class="pc-document-tab"><strong id="lab-document-name">캔버스</strong><span id="lab-comparison"></span></div>
+      <div class="pc-document-tab"><strong id="lab-document-name">캔버스</strong><span id="lab-comparison"></span><span id="lab-draft-state" role="status"></span></div>
       <div class="lab-document">
         <div id="lab-viewport"><div id="lab-stage" tabindex="0" aria-label="편집 캔버스. 레이어를 선택하고 방향키로 이동하세요."><img id="lab-preview" alt="편집 중인 PSD 캔버스" draggable="false"><img id="lab-reference" alt="PSD 원본 비교" hidden draggable="false"><div class="studio-safe" hidden></div><div id="lab-selection" hidden><button type="button" id="lab-resize" aria-label="선택 레이어 비율 유지 크기 조절"></button></div></div></div>
         <div class="pc-canvas-footer"><span>방향키 1px · Shift 10px</span><label>확대<select id="lab-zoom"><option value="fit">화면 맞춤</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.5">150%</option></select></label></div>
       </div>
+    </section>
+    <aside class="pc-sidebar" aria-label="채널 템플릿 및 편집 속성">
+      <section class="pc-modules"><h2>채널 템플릿</h2><label class="pc-channel">채널<select id="lab-channel" aria-label="편집할 채널" required></select></label><p class="pc-hint">현재 제작에 사용하는 버전입니다. 연결된 초안에는 미적용 변경이 있을 수 있습니다.</p><section id="studio-slots" aria-label="현재 적용 버전과 버전 이력"></section></section>
       <aside class="pc-inspector" aria-label="속성 및 레이어">
         <section class="pc-properties"><h2>속성 <span>PROPERTIES</span></h2><div id="lab-properties" aria-label="선택 레이어 속성"></div></section>
-        <section class="pc-layers"><h2>레이어 <span>위쪽이 앞면</span></h2><div id="lab-layers"></div></section>
+        <section class="pc-layers"><h2>레이어 <span>LAYERS</span></h2><div class="pc-layer-filters"><label>검색<input id="lab-layer-search" type="search" placeholder="레이어 이름"></label><label>종류<select id="lab-layer-kind"><option value="">전체</option><option value="type">글자</option><option value="image">사진</option><option value="shape">도형</option><option value="gradientfill">그라데이션</option></select></label></div><div id="lab-layers"></div><div class="pc-layer-actions" role="toolbar" aria-label="레이어 작업"><span>위쪽 레이어가 앞에 표시됩니다</span><button id="lab-delete-layer" type="button" data-document disabled title="레이어 삭제 (Delete)" aria-label="선택 레이어 삭제"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 10v7M14 10v7"/></svg></button></div></section>
       </aside>
-    </section>
-    <aside class="pc-empty-inspector" aria-label="문서 대기"><h2>속성</h2><p>PSD 또는 저장된 초안을 열어주세요.</p><h2>레이어</h2><p>문서를 열면 레이어가 표시됩니다.</p></aside>
+    </aside>
   </main>
   <footer class="pc-status"><span class="pc-status-dot" aria-hidden="true"></span><p id="lab-status" role="status" aria-live="polite">채널을 불러오는 중입니다…</p><span>NOWA TEMPLATE LAB</span></footer>
 
-  <dialog id="pc-library" aria-labelledby="pc-library-title"><div class="pc-dialog-heading"><h2 id="pc-library-title">파일 · 템플릿 보관함</h2><button type="button" data-close aria-label="보관함 닫기">×</button></div><p>선택한 채널에 PSD를 가져오거나 기존 초안을 이어서 편집하세요.</p><form id="lab-upload"><label>PSD 파일<input id="lab-file" type="file" accept=".psd" required></label><button class="primary" type="submit">PSD 가져오기</button></form><div class="pc-library-section"><label>기존 PSD 보관함<select id="lab-legacy"><option value="">기존 PSD 선택</option></select></label><button id="lab-import-existing" type="button">편집기로 가져오기</button></div><label>작업 중인 초안<select id="lab-library"><option value="">초안 선택</option></select></label><p class="pc-hint">가져오기·저장 결과는 화면 아래 상태 표시줄에서 확인할 수 있습니다.</p></dialog>
-  <dialog id="pc-versions" aria-labelledby="pc-versions-title"><div class="pc-dialog-heading"><h2 id="pc-versions-title">채널별 활성 템플릿</h2><button type="button" data-close aria-label="버전 목록 닫기">×</button></div><p>표지 · 본문 · CTA의 현재 버전과 보관된 이전 버전입니다.</p><section id="studio-slots" aria-label="현재 적용 버전과 버전 이력"></section></dialog>
+  <dialog id="pc-library" aria-labelledby="pc-library-title">
+    <div class="pc-dialog-heading"><h2 id="pc-library-title">템플릿 열기</h2><button type="button" data-close aria-label="보관함 닫기">×</button></div>
+    <p>새 파일로 시작하거나, 저장해 둔 작업을 이어서 편집하세요.</p>
+    <div class="pc-library-grid">
+      <section class="pc-library-card"><small>NEW</small><h3>신규 PSD로 시작</h3><p>컴퓨터의 PSD를 가져와 편집용 초안을 만듭니다. 동일한 파일은 기존 초안을 엽니다.</p><form id="lab-upload"><label>새 PSD 파일<input id="lab-file" type="file" accept=".psd" required></label><button class="primary" type="submit">PSD 가져와 시작하기</button></form></section>
+      <section class="pc-library-card"><small>CONTINUE</small><h3>기존 작업 이어서 편집</h3><p>저장된 편집용 초안입니다. 초안 저장만으로 채널 디자인이 바뀌지는 않습니다.</p><label>저장된 초안<select id="lab-library"><option value="">초안을 선택하세요</option></select></label><button id="lab-open-draft" type="button">선택한 초안 열기</button></section>
+    </div>
+    <section class="pc-library-card pc-applied"><h3>현재 채널에 적용 중</h3><p>제작에 사용하는 확정 버전입니다. 아래 버튼은 해당 버전에 연결된 편집용 초안을 엽니다.</p><div id="lab-applied-list"></div></section>
+    <p class="pc-hint">초안 편집 → 초안 저장 → 채널에 적용. 마지막 단계에서 새 적용 버전이 생성됩니다.</p>
+  </dialog>
   <dialog id="pc-publish" aria-labelledby="pc-publish-title"><div class="pc-dialog-heading"><h2 id="pc-publish-title">새 버전으로 채널에 적용</h2><button type="button" data-close aria-label="채널 적용 설정 닫기">×</button></div><p>먼저 초안을 저장하세요. 적용하면 이후 새 카드뉴스 제작부터 이 디자인을 사용합니다. CTA는 고정 디자인으로 추가됩니다.</p><div class="studio-mapping"><label>역할<select id="lab-role"><option value="cover">표지</option><option value="body">본문</option><option value="cta">CTA</option></select></label><label data-mapping>기사 글자 레이어<select id="lab-text-layer"></select></label><label data-mapping>기사 사진 레이어<select id="lab-image-layer"></select></label><label data-mapping data-cover>배지 글자 레이어<select id="lab-eyebrow-layer"></select></label><label data-mapping data-cover>배지 상자 레이어 (글자 길이에 맞춰 폭 조절)<select id="lab-badge-layer"></select></label><label data-mapping data-cover>보조 글자 레이어<select id="lab-caption-layer"></select></label><label data-mapping>최대 글자 수<input id="lab-max-chars" type="number" min="1" max="2000" value="80"></label><label data-mapping>줄당 글자 수<input id="lab-line-chars" type="number" min="1" max="200" value="20"></label><label data-mapping>최대 줄 수<input id="lab-max-lines" type="number" min="1" max="30" value="4"></label></div><button id="lab-publish" class="primary" type="button">저장한 버전을 채널에 적용</button><p class="pc-dialog-status" aria-live="polite"></p></dialog>
   <dialog id="pc-help" aria-labelledby="pc-help-title"><div class="pc-dialog-heading"><h2 id="pc-help-title">템플릿 편집 안내</h2><button type="button" data-close aria-label="도움말 닫기">×</button></div><p>레이어 선택 → 속성 편집 → 초안 저장 → 채널에 적용 순서로 작업하세요.</p><ul><li>레이어 목록을 드래그해 앞뒤 순서를 바꿉니다.</li><li>캔버스에서 선택 테두리를 드래그해 이동하고 모서리로 크기를 조절합니다.</li><li>캔버스에 초점이 있을 때 방향키로 1px, Shift와 함께 10px 이동합니다.</li><li>Ctrl+Z / Ctrl+Shift+Z는 캔버스에서 실행 취소 / 다시 실행입니다.</li><li>브러시·마스크·선택 영역 도구는 현재 연결된 기능에 포함되지 않습니다.</li></ul><details open><summary>PSD 재현 범위와 주의점</summary><ul id="lab-warnings"><li>PSD를 열면 변환 결과와 주의점이 표시됩니다.</li></ul></details><div class="pc-help-actions"><button id="lab-reset" type="button" data-document disabled>원래 레이어 설정 복원</button><a id="lab-download" aria-disabled="true">저장된 Python 템플릿 받기</a></div></dialog>
   <script src="/studio-common.js?v=studio-20261016-final"></script>
-  <script src="/template-studio.js?v=studio-20261016-final"></script>
-  <script src="/template-lab-photocraft.js?v=1"></script>
+  <script src="/template-studio.js?v=panels-4"></script>
+  <script src="/template-lab-photocraft.js?v=tools-3"></script>
 </body>
 </html>

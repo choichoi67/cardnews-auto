@@ -1,5 +1,18 @@
 from types import SimpleNamespace
 
+
+def test_article_text_keeps_short_context_and_reports_unavailable(monkeypatch):
+    from cardnews_auto import feeds
+    monkeypatch.setattr(feeds, "_fetch_page", lambda _: SimpleNamespace(
+        url="https://example.com/story", text='<meta name="description" content="요약만">'
+        '<article><p>부상 때문이다.</p><p>회복 후<br>일정을 <strong>발표했다.</strong></p>'
+        '<p>현재는 복귀했다.</p></article>'))
+    text = feeds.discover_article_text("https://example.com/story")
+    assert text == "부상 때문이다.\n\n회복 후 일정을 발표했다.\n\n현재는 복귀했다."
+    assert "요약만" not in text
+    monkeypatch.setattr(feeds, "_fetch_page", lambda _: None)
+    assert feeds.discover_article_text("https://example.com/story") == ""
+
 from cardnews_auto.feeds import (
     _PageContentParser,
     _extract_page_metadata,

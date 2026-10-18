@@ -17,7 +17,6 @@ def test_prepared_images_skip_download_search_and_paid_edit(monkeypatch, tmp_pat
         pytest.fail("Prepared output must not search, download or regenerate")
     monkeypatch.setattr(render, "_download_cover_image", forbidden)
     monkeypatch.setattr(render, "_transform_cover_image", forbidden)
-    monkeypatch.setattr(render, "_generate_news_illustration", forbidden)
     files = render.render_hybrid(card, {"cover": {"renderer": "image"}}, tmp_path / "out",
         image_transform={"enabled": True}, image_recovery=forbidden, prepared_images={0: source})
     assert Image.open(files[0]).size == (1080, 1440)

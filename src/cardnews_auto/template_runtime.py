@@ -35,7 +35,7 @@ def render(root, changes=None, order=None, bounds=None, assets=None, report=None
         layer, edit = layers[key], changes.get(key, {})
         if any(not 1 <= edit[k] <= 4096 for k in ('width', 'height') if k in edit):
             raise ValueError('레이어 크기는 1~4096px이어야 합니다.')
-        if not edit.get("visible", layer["visible"]):
+        if edit.get("deleted") or not edit.get("visible", layer["visible"]):
             continue
         x, y = edit.get("x", layer["x"]), edit.get("y", layer["y"])
         text_changed = "text" in edit and edit["text"].replace("\r", "\n") != layer.get("text", "").replace("\r", "\n")
@@ -94,15 +94,29 @@ def render(root, changes=None, order=None, bounds=None, assets=None, report=None
             bounds[key] = [int(x), int(y), tile.width, tile.height]
         if report is not None and layer['kind'] == 'type':
             report.setdefault('ink', {}).setdefault(key, (x, y, x + tile.width, y + tile.height))
-        if layer.get('blend_mode') == 'SOFT_LIGHT':
+        blend_mode = edit.get('blend_mode', layer.get('blend_mode', 'NORMAL'))
+        if 'blend_mode' in edit and blend_mode not in {'NORMAL', 'MULTIPLY', 'SCREEN', 'OVERLAY', 'DARKEN', 'LIGHTEN', 'SOFT_LIGHT'}:
+            raise ValueError('지원하지 않는 혼합 모드입니다.')
+        if blend_mode in {'MULTIPLY', 'SCREEN', 'OVERLAY', 'DARKEN', 'LIGHTEN', 'SOFT_LIGHT'}:
             import numpy as np
             overlay = Image.new('RGBA', canvas.size)
             overlay.alpha_composite(tile, (int(x), int(y)))
             a = np.asarray(canvas, dtype=np.float32) / 255
             b = np.asarray(overlay, dtype=np.float32) / 255
             cb, cs = a[..., :3], b[..., :3]
-            d = np.where(cb <= .25, ((16*cb-12)*cb+4)*cb, np.sqrt(cb))
-            mixed = np.where(cs <= .5, cb-(1-2*cs)*cb*(1-cb), cb+(2*cs-1)*(d-cb))
+            if blend_mode == 'MULTIPLY':
+                mixed = cb * cs
+            elif blend_mode == 'SCREEN':
+                mixed = 1 - (1-cb)*(1-cs)
+            elif blend_mode == 'OVERLAY':
+                mixed = np.where(cb <= .5, 2*cb*cs, 1-2*(1-cb)*(1-cs))
+            elif blend_mode == 'DARKEN':
+                mixed = np.minimum(cb, cs)
+            elif blend_mode == 'LIGHTEN':
+                mixed = np.maximum(cb, cs)
+            else:
+                d = np.where(cb <= .25, ((16*cb-12)*cb+4)*cb, np.sqrt(cb))
+                mixed = np.where(cs <= .5, cb-(1-2*cs)*cb*(1-cb), cb+(2*cs-1)*(d-cb))
             ab, ass = a[..., 3:4], b[..., 3:4]
             alpha = ass + ab*(1-ass)
             rgb = ((1-ass)*ab*cb+(1-ab)*ass*cs+ab*ass*mixed) / np.maximum(alpha, 1e-8)

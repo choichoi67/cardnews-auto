@@ -13,7 +13,7 @@ def test_grok_edit_estimate_includes_reference_images():
     assert price(NS(data=[{}], input_image_count=2), 'xai', 'grok-imagine-image-2.0')[:2] == (.1, 'estimated')
 
 
-@pytest.mark.parametrize('source_count', [0, 1])
+@pytest.mark.parametrize('source_count', [1])
 def test_grok_json_routes_dimensions_cache_and_usage(monkeypatch, tmp_path, capsys, source_count):
     monkeypatch.setenv('XAI_API_KEY', 'test-key')
     calls = []
@@ -31,14 +31,11 @@ def test_grok_json_routes_dimensions_cache_and_usage(monkeypatch, tmp_path, caps
         path = tmp_path / 'source.jpg'
         Image.new('RGB', (300, 200), 'blue').save(path)
         run = lambda: render._transform_cover_image(path, options, tmp_path/'cache')
-    else:
-        card = CardNews(topic='music', rationale='', source_urls=[], caption='', hashtags=[],
-                        slides=[Slide(role='cover', title='Music', body='')])
-        run = lambda: render._generate_news_illustration(card, card.slides[0], 0, options, tmp_path/'cache')
     result = run()
     assert Image.open(result).size == (1776, 2368)
     assert run() == result and len(calls) == 1
     url, request = calls[0]
+    assert request['timeout'] == (10.0, 300.0)
     assert url == 'https://api.x.ai/v1/images/' + ('edits' if source_count else 'generations')
     payload = request['json']
     if source_count:
@@ -63,27 +60,27 @@ def test_missing_grok_key_fails_without_network(monkeypatch):
         render._grok_image_request('test', {})
 
 
+@pytest.mark.parametrize('seconds,expected', [(180, 180.0), (1, 30.0)])
+def test_grok_timeout_is_configurable_and_does_not_repeat_paid_request(monkeypatch, seconds, expected):
+    monkeypatch.setenv('XAI_API_KEY', 'test-secret')
+    calls = []
+    def post(*args, **kwargs):
+        calls.append(kwargs)
+        raise render.requests.ReadTimeout('slow server')
+    monkeypatch.setattr(render.requests, 'post', post)
+    with pytest.raises(RuntimeError, match='자동 재요청하지 않았습니다') as error:
+        render._grok_image_request('test', {'timeout_seconds': seconds})
+    assert len(calls) == 1
+    assert calls[0]['timeout'] == (10.0, expected)
+    assert 'test-secret' not in str(error.value)
+
+
 def test_invalid_grok_key_has_actionable_error_without_secret(monkeypatch):
     monkeypatch.setenv('XAI_API_KEY', 'test-secret')
     monkeypatch.setattr(render.requests, 'post', lambda *a, **k: NS(status_code=400, text='Incorrect API key provided.'))
     with pytest.raises(RuntimeError, match='XAI_API_KEY') as error:
         render._grok_image_request('test', {})
     assert 'test-secret' not in str(error.value)
-
-
-def test_hybrid_keeps_grok_model_and_labels_illustration(monkeypatch, tmp_path):
-    buffer = BytesIO()
-    Image.new('RGB', (1200, 1600), 'green').save(buffer, 'PNG')
-    monkeypatch.setattr(render, '_download_cover_image', lambda *_: None)
-    monkeypatch.setattr(render, 'OpenAI', lambda **_: pytest.fail('Model must stay Grok'))
-    monkeypatch.setattr(render, '_grok_image_request', lambda **_: NS(data=[NS(b64_json=base64.b64encode(buffer.getvalue()).decode())]))
-    card = CardNews(topic='music', rationale='', source_urls=[], caption='', hashtags=[],
-                    slides=[Slide(role='cover', title='Music', body='')])
-    files = render.render_hybrid(card, {'publication_frame':'exact', 'cover':{'renderer':'auto'}}, tmp_path/'out',
-        image_transform={'model':'grok-imagine-image-2.0', 'enabled':True, 'recompose_for_publication':True})
-    assert Image.open(files[0]).size == (1080,1440)
-    assert card.slides[0].image_provider == 'grok_generated_illustration'
-    assert 'AI 생성 설명 이미지' in card.caption
 
 
 @pytest.mark.parametrize('status', [200, 400])

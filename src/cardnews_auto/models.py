@@ -34,6 +34,7 @@ class Article(BaseModel):
 
 class Slide(BaseModel):
     _image_search_attempted: bool = PrivateAttr(default=False)
+    _image_recovery_queries: list[str] = PrivateAttr(default_factory=list)
     role: Literal["cover", "body", "cta"] = "body"
     title: str
     body: str
@@ -41,6 +42,7 @@ class Slide(BaseModel):
     accent_color: str = ""  # used only when the cover template's "AI 배지 색" switch is on
     image_query: str = ""
     image_prompt: str = ""
+    image_kind: SkipJsonSchema[Literal["photo", "evidence", "data"]] = "photo"
     image_url: str = ""
     image_page_url: str = ""
     image_provider: str = ""

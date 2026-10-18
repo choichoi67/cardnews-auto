@@ -45,6 +45,19 @@ def studio(tmp_path, monkeypatch):
     return TestClient(app), root, owner
 
 
+def test_inspector_blend_preview_save_and_reload(studio):
+    client, root, _ = studio
+    route = f'/api/template-lab/a/{root.parent.name}'
+    changes = {'photo': {'blend_mode': 'MULTIPLY', 'opacity': .5, 'width': 540, 'height': 720}}
+    assert client.post(route + '/preview', json={'changes': changes}).status_code == 200
+    result = client.post(route + '/render', json={'changes': changes, 'revision': 0})
+    assert result.status_code == 200, result.text
+    saved = client.get(route).json()
+    assert saved['edits']['changes']['photo'] == changes['photo']
+    assert saved['revision'] == 1
+    assert client.post(route + '/preview', json={'changes': {'photo': {'blend_mode': 'INVALID'}}}).status_code == 422
+
+
 def test_publish_versions_conflicts_restore_and_channel_isolation(studio):
     client, root, owner=studio
     route=f'/api/template-lab/a/{root.parent.name}'
@@ -55,6 +68,7 @@ def test_publish_versions_conflicts_restore_and_channel_isolation(studio):
     r=client.post(route+'/publish',json=payload)
     assert r.status_code==200, r.text
     first=r.json()['active'];frozen=Path(first['bundle_path'])
+    assert client.get('/api/template-lab/a/catalog').json()['active']['cover']['draft_matches_active'] is True
     assert client.post(route+'/publish',json=payload).status_code==409
     assert client.post(route+'/publish',json={**payload,'role':'body'}).status_code==200
     assert client.post(route+'/publish',json={'role':'cta','revision':1}).status_code==200
@@ -64,9 +78,11 @@ def test_publish_versions_conflicts_restore_and_channel_isolation(studio):
     assert cfg['keep']=={'value':7}
     original=bundle_hash(frozen)
     assert client.post(route+'/render',json={'changes':{'photo':{'visible':False}},'revision':1}).status_code==200
+    assert client.get('/api/template-lab/a/catalog').json()['active']['cover']['draft_matches_active'] is False
     assert bundle_hash(frozen)==original
     assert client.post(route+'/publish',json={**payload,'revision':2,'expected_active':first['template_id']}).status_code==400
     r=client.post(route+'/render',json={'changes':{},'revision':2});assert r.status_code==200
+    assert client.get('/api/template-lab/a/catalog').json()['active']['cover']['draft_matches_active'] is True
     newer=client.post(route+'/publish',json={**payload,'revision':3,'expected_active':first['template_id']}).json()['active']
     restored=client.post('/api/template-lab/a/activate/'+first['template_id'],json={'role':'cover','revision':0,'expected_active':newer['template_id']})
     assert restored.status_code==200, restored.text

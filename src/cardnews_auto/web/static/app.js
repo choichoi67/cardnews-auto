@@ -1,6 +1,5 @@
 const PROFILE_CHECKBOXES = [
-  "schedule_enabled", "telegram_enabled", "drive_enabled", "image_transform_enabled",
-  "web_image_search_enabled", "rss_image_enabled", "rss_image_same_site_only"
+  "schedule_enabled", "telegram_enabled", "drive_enabled", "image_transform_enabled"
 ];
 
 function renderNewsroom() {
@@ -231,10 +230,9 @@ function openForm(profile=null) {
   const values = profile || {
     brand_name:"NOWA", handle:"@your_handle", tone:"정보 밀도가 높고 간결한 한국어", color:"#7c3aed",
     slide_count:0, collection_size:10, schedule_enabled:false, collection_times:["09:00","14:00","20:00"],
-    telegram_enabled:true, drive_enabled:false, image_transform_enabled:true,
-    web_image_search_enabled:true, rss_image_enabled:true, rss_image_same_site_only:true
+    telegram_enabled:true, drive_enabled:false, image_transform_enabled:true
   };
-  ["name","category","brand_name","handle","tone","drive_folder_id","color","image_prompt","cover_prompt","body_prompt","caption_prompt","slide_count","collection_size"].forEach((key) => {
+  ["name","category","brand_name","handle","tone","drive_folder_id","color","image_prompt","slide_count","collection_size"].forEach((key) => {
     if (form.elements[key]) form.elements[key].value = values[key] ?? "";
   });
   form.elements.schedule_count.innerHTML = Array.from({ length:10 }, (_, index) => `<option value="${index + 1}">${index + 1}회</option>`).join("");
@@ -249,6 +247,7 @@ function openForm(profile=null) {
 
   $("#shared-image-policy").textContent = `전 채널 공통 이미지 정책 · ${values.image_model || "grok-imagine-image-2.0"}`;
   state.pendingPsdFiles = [];
+  $("#profile-template-status").textContent = "";
   toggleConditionalSettings();
   selectTab("[data-settings-tab]", "[data-settings-panel]", "settingsTab", "settingsPanel", "basic");
   $("#profile-dialog").showModal();
@@ -294,7 +293,8 @@ $("#collect").onclick = () => action("collect", $("#collect"), "수집 시작 �
 $("#send-telegram").onclick = () => action("telegram", $("#send-telegram"), "전송 중");
 $("#new-profile").onclick = () => openForm();
 $("#edit-profile").onclick = () => openForm(activeProfile());
-$("#close-dialog").onclick = $("#cancel-dialog").onclick = () => $("#profile-dialog").close();
+$("#close-dialog").onclick = $("#cancel-dialog").onclick = () => { if (!state.profileSaving) $("#profile-dialog").close(); };
+$("#profile-dialog").addEventListener("cancel", event => { if (state.profileSaving) event.preventDefault(); });
 $("#close-revision").onclick = () => $("#revision-dialog").close();
 $("#revision-form").elements.reference_image.onchange = (event) => {
   $("#reference-name").textContent = event.target.files[0]?.name || "이미지를 선택하거나 끌어다 놓으세요";
@@ -372,7 +372,9 @@ $("#profile-form").onsubmit = async (event) => {
     form.querySelector(":invalid")?.focus();
     return;
   }
-  const submit = form.querySelector("button[type=submit]");
+  const submit = event.submitter || form.querySelector(".dialog-actions button[type=submit]");
+  if (state.profileSaving) return;
+  state.profileSaving = true;
   submit.dataset.wasDisabled = "false";
   setButtonLoading(submit, true, "저장 중");
   const body = Object.fromEntries(new FormData(form));
@@ -383,21 +385,47 @@ $("#profile-form").onsubmit = async (event) => {
   body.collection_times = [...document.querySelectorAll("[name=collection_time]")].map((input) => input.value);
   ["pages","feeds"].forEach((key) => body[key] = lines(body[key]));
   PROFILE_CHECKBOXES.forEach((key) => body[key] = form.elements[key].checked);
+  const controls = [...form.querySelectorAll("input:not(:disabled), textarea:not(:disabled), select:not(:disabled), button:not(:disabled)")];
+  controls.forEach(control => control.disabled = true);
   try {
     const path = state.editingId ? `/api/profiles/${state.editingId}` : "/api/profiles";
     const saved = await api(path, { method:state.editingId ? "PUT" : "POST", body:JSON.stringify(body) });
     state.activeId = saved.id;
+    state.editingId = saved.id;
+    $("#dialog-title").textContent = "채널 설정";
+    for (const input of form.querySelectorAll("[data-psd-role]")) {
+      const file = input.files[0];
+      if (!file) continue;
+      $("#profile-template-status").textContent = `${file.name} · PSD를 가져오는 중입니다…`;
+      const upload = new FormData();
+      upload.append("file", file);
+      upload.append("role", input.dataset.psdRole);
+      const draft = await api(`/api/template-lab/${encodeURIComponent(saved.id)}`, {method:"POST", body:upload});
+      state.pendingPsdFiles.push(draft.id);
+      input.value = "";
+    }
+    if (state.pendingPsdFiles.length || submit.id === "profile-template-open") {
+      const query = new URLSearchParams({channel:saved.id});
+      if (state.pendingPsdFiles.length) query.set("draft", state.pendingPsdFiles[0]);
+      location.href = `/template-lab-photocraft.html?${query}`;
+      return;
+    }
     $("#profile-dialog").close();
     toast("채널 설정을 저장했습니다.", "success");
     await refresh(true);
   } catch (error) {
+    $("#profile-template-status").textContent = state.editingId
+      ? `채널은 저장되어 있습니다. ${error.message} 선택한 파일을 확인하고 다시 저장하세요. 완료된 PSD는 보관함에 유지됩니다.`
+      : error.message;
     toast(error.message, "error");
   } finally {
+    state.profileSaving = false;
+    controls.forEach(control => control.disabled = false);
     setButtonLoading(submit, false);
   }
 };
 
-if (location.hash === "#template-lab") location.replace("/template-studio.html");
+if (location.hash === "#template-lab") location.replace("/template-lab-photocraft.html");
 $("#data-retry").onclick = () => refresh(true);
 const initialView = ["queue","production","outputs"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "queue";
 switchView(initialView);

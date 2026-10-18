@@ -14,6 +14,24 @@ from cardnews_auto.telegram_bot import (
 )
 
 
+def test_rate_limited_control_message_retries_after_server_delay(monkeypatch):
+    from types import SimpleNamespace
+    from cardnews_auto import telegram_bot
+    calls, sleeps = [], []
+    def post(*args, **kwargs):
+        calls.append(kwargs)
+        if len(calls) == 1:
+            return SimpleNamespace(status_code=429, json=lambda: {"ok": False, "parameters": {"retry_after": 18}})
+        return SimpleNamespace(status_code=200, json=lambda: {"ok": True, "result": {"message_id": 7}})
+    monkeypatch.setattr(telegram_bot.requests, "post", post)
+    monkeypatch.setattr(telegram_bot.time, "sleep", sleeps.append)
+    keyboard = {"inline_keyboard": [[{"text": "재제작", "callback_data": "remake:_:job"}]]}
+    assert TelegramClient("test", "123", 4).send("완료", keyboard)["message_id"] == 7
+    assert sleeps == [19]
+    assert calls[0]["json"] == calls[1]["json"]
+    assert calls[1]["json"]["message_thread_id"] == 4
+
+
 def test_explicit_job_environment_overrides_stale_process_credentials(monkeypatch):
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "old-token")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "old-chat")
@@ -154,10 +172,12 @@ def test_media_group_preserves_payload_and_closes_files(monkeypatch, tmp_path):
 
 def test_build_lifecycle_messages_include_job(monkeypatch):
     sent = []
+    keyboards = []
 
     class FakeClient:
-        def send(self, text):
+        def send(self, text, reply_markup=None):
             sent.append(text)
+            keyboards.append(reply_markup)
             return {"message_id": len(sent)}
 
     monkeypatch.setattr("cardnews_auto.telegram_bot.client_from_env", lambda: FakeClient())
@@ -170,6 +190,7 @@ def test_build_lifecycle_messages_include_job(monkeypatch):
     send_build_status(
         "failed", "테스트 주제", "1234567890", error="Photoshop 연결 실패",
     )
+    assert keyboards[-1]["inline_keyboard"][0][0]["callback_data"] == "remake:_:1234567890"
 
     assert sent == [
         (

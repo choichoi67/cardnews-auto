@@ -25,11 +25,20 @@ class TelegramClient:
         self.thread_id = thread_id
 
     def call(self, method: str, payload: dict | None = None, timeout: int = 30):
-        try:
-            response = requests.post(f"{self.base_url}/{method}", json=payload or {}, timeout=timeout + 5)
-        except requests.RequestException:
-            raise RuntimeError('Telegram 연결 실패: 처리 결과를 확인한 뒤 재시도하세요.') from None
-        return self._result(response, method)
+        for attempt in range(3):
+            try:
+                response = requests.post(f"{self.base_url}/{method}", json=payload or {}, timeout=timeout + 5)
+            except requests.RequestException:
+                raise RuntimeError('Telegram 연결 실패: 처리 결과를 확인한 뒤 재시도하세요.') from None
+            if response.status_code == 429 and attempt < 2:
+                try:
+                    retry_after = int(response.json().get("parameters", {}).get("retry_after", 0))
+                except (ValueError, TypeError):
+                    retry_after = 0
+                if 0 < retry_after <= 120:
+                    time.sleep(retry_after + 1)
+                    continue
+            return self._result(response, method)
 
     @staticmethod
     def _result(response, method: str):
@@ -227,10 +236,15 @@ def send_build_status(
     position_text = f"{position}번째" if position else "대기 중"
     source_label = {"browser": "브라우저", "telegram": "텔레그램"}.get(source, source)
     client = client_from_env() if environ is None else client_from_env(environ=environ)
-    return client.send(JOB_STATES[status]["message"].format(
+    text = JOB_STATES[status]["message"].format(
         topic=topic, job_id=job_id[:8], source=source_label,
         position=position_text, total=total, error=error[:2500],
-    )[:4096])
+    )[:4096]
+    if status in {"failed", "interrupted"}:
+        return client.send(text, {"inline_keyboard": [[
+            {"text": "♻️ 같은 기사 재제작", "callback_data": f"remake:_:{job_id}"},
+        ]]})
+    return client.send(text)
 
 
 def _revision_field(text: str, number: int, next_number: int | None) -> str:
@@ -334,6 +348,12 @@ def listen_forever(
         client.call("deleteWebhook", {"drop_pending_updates": False})
     print("Telegram 승인 수신 대기 중... Ctrl+C로 종료")
     pending_revisions: dict[tuple, dict] = {}
+    def answer(query_id, text, show_alert=False):
+        try:
+            poller.call('answerCallbackQuery', {'callback_query_id': query_id, 'text': text[:180], 'show_alert': show_alert})
+        except RuntimeError:
+            pass
+
     while not should_stop():
         updates = poller.call(
             "getUpdates",
@@ -350,6 +370,9 @@ def listen_forever(
             if routes is not None:
                 route = routes.get(destination)
                 if route is None:
+                    query = update.get('callback_query')
+                    if query:
+                        answer(query['id'], '이 대화방은 현재 채널에 연결되어 있지 않습니다. 채널 전용 방의 최신 버튼을 사용하세요.', True)
                     continue
                 client = route['client']
                 state_path, on_approved = route['state_path'], route.get('on_approved')
@@ -357,8 +380,17 @@ def listen_forever(
                 if incoming.get('chat', {}).get('type') in {'group', 'supergroup'}:
                     if not actor.get('id'):
                         continue
-                    member = client.call('getChatMember', {'chat_id':client.chat_id, 'user_id':actor['id']})
+                    try:
+                        member = client.call('getChatMember', {'chat_id':client.chat_id, 'user_id':actor['id']})
+                    except RuntimeError:
+                        query = update.get('callback_query')
+                        if query:
+                            answer(query['id'], '방 관리자 권한을 확인하지 못했습니다. 잠시 후 다시 시도하세요.', True)
+                        continue
                     if member.get('status') not in {'creator', 'administrator'}:
+                        query = update.get('callback_query')
+                        if query:
+                            answer(query['id'], '이 방의 관리자만 승인·재제작할 수 있습니다.', True)
                         continue
             pending_revision = pending_revisions.setdefault(pending_key, {})
             message = update.get("message")
@@ -372,13 +404,13 @@ def listen_forever(
                     continue
                 explicit = text.split(maxsplit=2) if text.startswith("/수정 ") else []
                 target_job = explicit[1] if len(explicit) >= 3 else pending_revision.get("job_id", "")
-                answer = explicit[2] if len(explicit) >= 3 else text
+                revision_answer = explicit[2] if len(explicit) >= 3 else text
                 if text == "/취소":
                     pending_revision.clear()
                     client.send("수정 요청을 취소했습니다.")
                 elif target_job and on_revision:
                     try:
-                        instruction, cover_title, slide_number, slide_title, slide_body = _parse_revision_answer(answer)
+                        instruction, cover_title, slide_number, slide_title, slide_body = _parse_revision_answer(revision_answer)
                         on_revision(
                             target_job,
                             instruction,
@@ -431,10 +463,7 @@ def listen_forever(
                     else:
                         result = on_revision(revision, "", "", 0, "", "")
                         position = (result.get("build_job") or {}).get("queue_position", "")
-                        client.call("answerCallbackQuery", {
-                            "callback_query_id": query["id"],
-                            "text": f"재제작 대기열 등록 완료{f' · {position}번째' if position else ''}",
-                        })
+                        answer(query['id'], f"재제작 대기열 등록 완료{f' · {position}번째' if position else ''}")
                     continue
                 review_path, approved_handler = state_path, on_approved
                 if resolve_review:
@@ -465,7 +494,4 @@ def listen_forever(
                         else:
                             client.send(f"❌ 제작 실패\n{message}")
             except Exception as exc:
-                client.call(
-                    "answerCallbackQuery",
-                    {"callback_query_id": query["id"], "text": str(exc)[:180], "show_alert": True},
-                )
+                answer(query['id'], str(exc), True)

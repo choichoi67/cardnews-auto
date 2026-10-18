@@ -106,7 +106,8 @@ def test_workers_stream_log_and_next_job_runs_after_failure(monkeypatch, tmp_pat
     monkeypatch.setattr(dashboard_jobs, "profile_config", lambda _: {"telegram": {"enabled": False}})
     monkeypatch.setattr(dashboard_jobs, "build_snapshot", lambda _: {})
     monkeypatch.setattr(dashboard_jobs, "_env_values", lambda _: {})
-    monkeypatch.setattr(dashboard_jobs, "notify_build", lambda *a, **k: True)
+    notifications = []
+    monkeypatch.setattr(dashboard_jobs, "notify_build", lambda *a, **k: notifications.append((a[1], a[2])) or True)
     monkeypatch.setattr(database, "MAX_RUNNING_BUILDS", 1)  # exercise the waiting path with one slot
     database.add_job(job("first"))
     database.add_job(job("second", "football"))
@@ -148,6 +149,8 @@ def test_workers_stream_log_and_next_job_runs_after_failure(monkeypatch, tmp_pat
     assert calls == ["first", "second"]
     assert database.get_job("first")["status"] == "failed"
     assert database.get_job("second")["status"] == "completed"
+    assert ("failed", "first") in notifications
+    assert ("completed", "second") in notifications
 
 
 @pytest.mark.parametrize("size,success", [((2292, 1200), False), ((1080, 1440), True)])

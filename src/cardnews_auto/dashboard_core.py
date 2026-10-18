@@ -16,7 +16,7 @@ import yaml
 
 from .render import DEFAULT_POSE_EDIT_PROMPT
 from .workflow import _now, _write_state as _atomic_json
-from .writer import DEFAULT_BODY_PROMPT, DEFAULT_COVER_PROMPT
+from .writer import DEFAULT_BODY_PROMPT, DEFAULT_COVER_PROMPT, DEFAULT_CAPTION_PROMPT
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -77,8 +77,8 @@ class ProfileInput(BaseModel):
     image_prompt: str = DEFAULT_POSE_EDIT_PROMPT
     web_image_search_enabled: bool = True
     rss_image_enabled: bool = True
-    rss_image_same_site_only: bool = True
-    caption_prompt: str = Field(default="", max_length=8000)
+    rss_image_same_site_only: bool = False
+    caption_prompt: str = Field(default=DEFAULT_CAPTION_PROMPT, max_length=8000)
     body_prompt: str = Field(default=DEFAULT_BODY_PROMPT, max_length=8000)
     cover_prompt: str = Field(default=DEFAULT_COVER_PROMPT, max_length=12000)
     slide_count: int = Field(default=0, ge=0, le=30)
@@ -234,9 +234,9 @@ def write_profile_config(
     cfg = apply_image_policy(cfg)
     generation = cfg["generation"]
     generation.update(
-        caption_prompt=payload.caption_prompt,
-        body_prompt=payload.body_prompt.strip() or DEFAULT_BODY_PROMPT,
-        cover_prompt=payload.cover_prompt.strip() or DEFAULT_COVER_PROMPT,
+        caption_prompt=DEFAULT_CAPTION_PROMPT,
+        body_prompt=DEFAULT_BODY_PROMPT,
+        cover_prompt=DEFAULT_COVER_PROMPT,
         research_enabled=True,
     )
     path = Path(item["config_path"])

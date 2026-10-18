@@ -37,8 +37,9 @@ def _fetch_page(url: str):
 
 
 class _PageContentParser(HTMLParser):
-    def __init__(self, base_url: str = ""):
+    def __init__(self, base_url: str = "", min_paragraph_chars: int = 40):
         super().__init__()
+        self.min_paragraph_chars = min_paragraph_chars
         self.base_url = base_url
         self.description = ""
         self.published = ""
@@ -94,7 +95,7 @@ class _PageContentParser(HTMLParser):
         elif tag == "p":
             self._paragraph_depth = 1
             self._paragraph_text = []
-        elif self._paragraph_depth:
+        elif self._paragraph_depth and tag not in {"area", "base", "br", "col", "embed", "hr", "input", "link", "param", "track", "wbr"}:
             self._paragraph_depth += 1
 
     def handle_data(self, data: str) -> None:
@@ -114,7 +115,7 @@ class _PageContentParser(HTMLParser):
             return
         if tag == "p" and self._paragraph_depth == 1:
             text = re.sub(r"\s+", " ", " ".join(self._paragraph_text)).strip()
-            if len(text) >= 40:
+            if len(text) >= self.min_paragraph_chars:
                 self.paragraphs.append(text)
             self._paragraph_depth = 0
             self._paragraph_text = []
@@ -133,6 +134,16 @@ def _extract_page_metadata(html: str, base_url: str = "") -> tuple[str, str, str
         r"<[^>]+>", " ", parser.description or " ".join(parser.paragraphs[:2])
     ))).strip()
     return (text if len(text) <= 280 else shorten(text, width=280, placeholder="…")), published, parser.image_url
+
+
+def discover_article_text(url: str) -> str:
+    """Extract source paragraphs, including short context sentences, without summarizing."""
+    response = _fetch_page(url)
+    if response is None:
+        return ""
+    parser = _PageContentParser(response.url, min_paragraph_chars=1)
+    parser.feed(response.text)
+    return "\n\n".join(parser.paragraphs)
 
 
 def discover_article_image(url: str) -> str:

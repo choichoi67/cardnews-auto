@@ -52,7 +52,12 @@
 .template-studio .lab-toolbar {margin:8px 0;display:flex;gap:12px;align-items:end;}
 .template-studio .lab-toolbar label:first-child {min-width:160px;}
 .studio-slots {gap:8px;margin:8px 0;}
-.studio-slot {padding:8px 12px;position:relative;display:grid;grid-template-columns:45px 1fr auto;gap:4px 10px;align-items:center;}
+.studio-slot {padding:8px 12px;position:relative;display:grid;grid-template-columns:45px minmax(0,1fr) auto;gap:4px 10px;align-items:start;align-content:start;}
+.studio-slot>span {min-width:0;overflow-wrap:anywhere;}
+.template-studio .studio-slot .studio-ai-accent {grid-column:1 / -1;display:block;line-height:1.6;margin-top:8px;}
+.studio-ai-accent input {vertical-align:middle;}
+.studio-ai-accent small {margin-top:4px;}
+.template-studio .studio-slot .studio-ai-target {grid-column:1 / -1;line-height:1.6;}
 .studio-slot strong {margin:0;}
 .studio-slot small {grid-column:2;}
 .studio-slot details {grid-column:3;grid-row:1 / span 2;}

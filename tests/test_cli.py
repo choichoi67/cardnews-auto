@@ -10,7 +10,6 @@ from cardnews_auto.cli import (
     _unique_output_dir,
     load_env,
 )
-from cardnews_auto.writer import DEFAULT_BODY_PROMPT, DEFAULT_COVER_PROMPT
 
 
 def test_rebuild_uses_a_new_output_directory(tmp_path):
@@ -53,10 +52,8 @@ def test_full_rebuild_loads_article_snapshot_json(monkeypatch, tmp_path):
         _build(tmp_path / "config.yaml", {}, False, True, str(snapshot_path))
 
     generation = captured["generation"]
-    assert generation["cover_prompt"].startswith(DEFAULT_COVER_PROMPT)
-    assert generation["body_prompt"].startswith(DEFAULT_BODY_PROMPT)
-    assert "문장을 더 자연스럽게" in generation["cover_prompt"]
-    assert "문장을 더 자연스럽게" in generation["body_prompt"]
+    assert generation["_revision_instruction"] == "문장을 더 자연스럽게"
+    assert not {"cover_prompt", "body_prompt", "caption_prompt"} & generation.keys()
 
 
 def test_cli_loads_project_env(monkeypatch, tmp_path):

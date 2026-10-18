@@ -53,7 +53,7 @@ def test_no_candidates_cannot_call_grok_even_with_legacy_option(photos, tmp_path
 def test_empty_search_reports_no_candidates_instead_of_download_failure(photos, tmp_path):
     value = card()
     value.slides[1].image_url = ""
-    with pytest.raises(RuntimeError, match="검색·관련성·출처 검사를 통과한 사진 후보가 없습니다"):
+    with pytest.raises(RuntimeError, match="검색에서 사용할 사진 후보를 얻지 못했습니다"):
         render.render_hybrid(value, config(), tmp_path / "out", image_recovery=lambda *_: [])
 
 

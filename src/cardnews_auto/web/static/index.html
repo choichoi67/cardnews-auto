@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f1f8">
   <title>NOWA Cardnews Studio</title>
-  <link rel="stylesheet" href="/styles.css?v=studio-20261016-final">
+  <link rel="stylesheet" href="/styles.css?v=common-settings-20261019">
 <link rel="stylesheet" href="/template-studio.css?v=studio-20261016-final">
 </head>
 <body>
@@ -30,7 +30,7 @@
         </button>
       </div>
 
-      <a class="studio-nav" href="/template-studio.html">템플릿 제작</a>
+      <a class="studio-nav" href="/template-lab-photocraft.html">템플릿 제작소</a>
       <div class="system-card" aria-label="연결 상태">
         <div class="system-title"><span>연결 상태</span><small>LIVE</small></div>
         <div><span id="openai-dot" class="dot"></span><b>OpenAI</b><small>원고·배치</small></div>
@@ -177,8 +177,7 @@
       <nav class="settings-tabs" role="tablist" aria-label="채널 설정 항목">
         <button id="settings-tab-basic" class="settings-tab active" type="button" role="tab" aria-selected="true" aria-controls="settings-basic" data-settings-tab="basic">기본 정보</button>
         <button id="settings-tab-sources" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-sources" data-settings-tab="sources" tabindex="-1">수집·일정</button>
-        <button id="settings-tab-design" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-design" data-settings-tab="design" tabindex="-1">AI 디자인</button>
-        <button id="settings-tab-caption" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-caption" data-settings-tab="caption" tabindex="-1">원고 프롬프트</button>
+        <button id="settings-tab-design" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-design" data-settings-tab="design" tabindex="-1">템플릿</button>
         <button id="settings-tab-delivery" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-delivery" data-settings-tab="delivery" tabindex="-1">전송·이미지</button>
       </nav>
 
@@ -195,10 +194,6 @@
         </section>
 
         <section id="settings-sources" class="settings-page" role="tabpanel" aria-labelledby="settings-tab-sources" data-settings-panel="sources" hidden>
-        <h3 class="form-section-title wide">슬라이드 이미지 수집 규칙</h3>
-        <label class="check wide"><input name="web_image_search_enabled" type="checkbox" checked disabled> OpenAI 웹 이미지 검색 우선</label>
-        <label class="check"><input name="rss_image_enabled" type="checkbox" checked disabled> RSS 원문 이미지 폴백 허용</label>
-        <label class="check"><input name="rss_image_same_site_only" type="checkbox" checked disabled> RSS 기사와 같은 사이트·CDN만 허용</label>
         <h3 class="form-section-title wide">뉴스 소스와 자동 수집 시간을 관리하세요</h3>
         <label class="wide">뉴스 사이트 URL <small>한 줄에 하나</small><textarea name="pages" rows="3" inputmode="url"></textarea></label>
         <label class="wide">RSS URL <small>한 줄에 하나</small><textarea name="feeds" rows="3" inputmode="url"></textarea></label>
@@ -208,33 +203,11 @@
         </section>
 
         <section id="settings-design" class="settings-page" role="tabpanel" aria-labelledby="settings-tab-design" data-settings-panel="design" hidden>
-<div class="wide"><h3>채널 템플릿</h3><p>표지·본문·CTA의 편집과 저장은 템플릿 제작에서 관리합니다. 기존 버전은 보관됩니다.</p><a class="button primary" href="/template-studio.html">템플릿 제작 열기</a></div>
-        </section>
-
-        <section id="settings-caption" class="settings-page caption-settings" role="tabpanel" aria-labelledby="settings-tab-caption" data-settings-panel="caption" hidden>
-        <h3 class="form-section-title wide">채널 전용 표지 헤드라인을 설정하세요</h3>
-        <label class="wide">표지 생성 프롬프트
-          <small>뉴스 가치 선택, 두 줄 구성, 금지 표현과 말투를 설정합니다. 실제 PSD 글자 수 제한은 항상 우선합니다.</small>
-          <textarea name="cover_prompt" rows="13" maxlength="12000"></textarea>
-        </label>
-        <h3 class="form-section-title wide">채널 전용 본문 흐름을 설정하세요</h3>
-        <label class="wide">본문 생성 프롬프트
-          <small>요약 순서, 말투, 문장 수와 슬라이드별 줄 배치 규칙을 설정합니다.</small>
-          <textarea name="body_prompt" rows="13" maxlength="8000"></textarea>
-        </label>
-        <aside class="caption-tip wide" aria-label="본문 근거 규칙">
-          <strong>근거 사용 순서</strong>
-          <p>승인된 RSS 기사를 1차 근거로 사용하고, 웹·커뮤니티·공개 인스타그램 검색은 교차 확인과 실제 반응 보강에만 사용합니다.</p>
-        </aside>
-        <h3 class="form-section-title wide">채널 전용 캡션 형식을 설정하세요</h3>
-        <label class="wide">캡션 생성 프롬프트
-          <small>제목 형식, 문단 순서, 필수 표기와 말투를 예시처럼 구체적으로 작성하세요.</small>
-          <textarea name="caption_prompt" rows="16" maxlength="8000" placeholder="예: 첫 줄은 **✅ [뉴스] ...** 형식으로 시작하고 마지막에 Song과 Artist를 표기한다."></textarea>
-        </label>
-        <aside class="caption-tip wide" aria-label="캡션 프롬프트 작성 도움말">
-          <strong>고정 형식 유지 방법</strong>
-          <p>변하지 않는 문구는 그대로 적고, 기사마다 달라질 부분은 대괄호로 설명하세요. AI가 이 규칙을 일반 캡션 지침보다 우선 적용합니다.</p>
-        </aside>
+        <div class="wide"><h3>채널 템플릿</h3><p>PSD를 선택하고 저장하면 이 채널의 템플릿 제작소가 열립니다. 글자·사진 레이어를 지정하고 ‘채널에 적용’하면 자동생성에 사용됩니다. 기존 적용 버전은 유지됩니다.</p></div>
+        <label>표지 PSD<input id="profile-psd-cover" type="file" accept=".psd" data-psd-role="cover"></label>
+        <label>본문 PSD<input id="profile-psd-body" type="file" accept=".psd" data-psd-role="body"></label>
+        <label>CTA PSD (선택)<input id="profile-psd-cta" type="file" accept=".psd" data-psd-role="cta"></label>
+        <div class="wide"><button id="profile-template-open" class="button secondary" type="submit">저장 후 템플릿 제작소 열기</button><p id="profile-template-status" role="status" aria-live="polite"></p></div>
         </section>
 
         <section id="settings-delivery" class="settings-page" role="tabpanel" aria-labelledby="settings-tab-delivery" data-settings-panel="delivery" hidden>
@@ -367,7 +340,7 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/ui.js?v=studio-20261016-final"></script>
-  <script src="/app.js?v=studio-20261016-final"></script>
+  <script src="/app.js?v=common-settings-20261019"></script>
 
 </body>
 </html>

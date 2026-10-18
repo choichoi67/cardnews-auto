@@ -25,12 +25,12 @@ def test_recovery_replaces_failed_visual_target_without_changing_copy(monkeypatc
         return [
             {"url": "https://example.com/used.jpg", "caption": "Doechii concert performance"},
             {"url": "https://example.com/new.jpg", "caption": "Doechii onstage"},
-            {"url": "https://example.com/wrong.jpg", "caption": "Another artist concert performance"},
+            {"url": "https://example.com/archive.jpg", "caption": ""},
         ]
     monkeypatch.setattr(source, "_openai_image_search", search)
     before = slide.model_dump()
     results = source.search_alternative_images(slide, article, {}, ["https://example.com/used.jpg"])
-    assert [r["url"] for r in results] == ["https://example.com/new.jpg"]
+    assert [r["url"] for r in results] == ["https://example.com/new.jpg", "https://example.com/archive.jpg"]
     assert results[0]["provider"].endswith(":subject_context")
     assert requests[0].startswith("Doechii concert performance")
     assert "금속 의상 불꽃 장식 클로즈업" not in requests[0]

@@ -97,3 +97,22 @@ def test_recovery_sees_other_queries_and_excludes_used_images(monkeypatch):
                                      other_queries=[card.slides[1].image_query])
     assert card.slides[1].image_query in requests[0]
     assert "used.jpg" in requests[0] and "Reformulate the search" in requests[0]
+
+
+def test_recovery_keywords_are_grounded_in_original_article(monkeypatch):
+    from types import SimpleNamespace as NS
+    from cardnews_auto.models import Article, Slide
+    article = Article(title="Recovery update", url="https://example.com/original")
+    original = "Emiliano Martinez returned to Aston Villa after the announcement."
+    monkeypatch.setattr(source, "_article_source_text", lambda _: original)
+    requests = []
+    def parse(**kwargs):
+        requests.append(kwargs)
+        return NS(output_parsed=source.RecoveryImageQuery(
+            subject="Emiliano Martinez", query="Emiliano Martinez portrait", visual_focus="Archive photo"))
+    monkeypatch.setattr(source, "OpenAI", lambda **_: NS(responses=NS(parse=parse)))
+    result = source._plan_recovery_query(Slide(title="Update", body=""), article, "test", [])
+    assert result.subject == "Emiliano Martinez"
+    assert original in requests[0]["input"][1]["content"]
+    monkeypatch.setattr(source, "_article_source_text", lambda _: "Unrelated source")
+    assert source._plan_recovery_query(Slide(title="Update", body=""), article, "test", []) is None

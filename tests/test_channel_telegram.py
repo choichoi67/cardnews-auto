@@ -58,6 +58,7 @@ def test_runtime_lock_rejects_duplicate_and_releases(tmp_path):
 
 def test_listener_only_accepts_admin_in_assigned_room(tmp_path):
     revisions = []
+    answers = []
     updates = []
     for index, (chat, actor) in enumerate([(-9, 1), (-1, 2), (-1, 1)], 1):
         updates.append({'update_id': index, 'callback_query': {
@@ -76,6 +77,8 @@ def test_listener_only_accepts_admin_in_assigned_room(tmp_path):
                 return [updates.pop(0)]
             if method == 'getChatMember':
                 return {'status': 'creator' if payload['user_id'] == 1 else 'member'}
+            if method == 'answerCallbackQuery':
+                answers.append(payload)
             return True
 
     client = Client()
@@ -85,3 +88,35 @@ def test_listener_only_accepts_admin_in_assigned_room(tmp_path):
         listen_forever(tmp_path / 'state.json', tmp_path / 'offset.json',
                        routes=routes, polling_client=client)
     assert revisions == [('music', '', '', 0, '', '')]
+    assert len(answers) == 3
+    assert [answer['show_alert'] for answer in answers] == [True, True, False]
+
+
+def test_expired_callback_answer_does_not_stop_listener_or_repeat_revision(tmp_path):
+    revisions = []
+    polls = []
+
+    class Client:
+        chat_id = '-1'
+
+        def call(self, method, payload=None, timeout=30):
+            if method == 'getWebhookInfo':
+                return {}
+            if method == 'getUpdates':
+                polls.append(payload['offset'])
+                if len(polls) > 1:
+                    raise StopIteration
+                return [{'update_id': 10, 'callback_query': {'id': 'expired',
+                        'data': 'remake:_:job', 'from': {'id': 1},
+                        'message': {'chat': {'id': -1, 'type': 'private'}}}}]
+            if method == 'answerCallbackQuery':
+                raise RuntimeError('query is too old')
+
+    client = Client()
+    routes = {('-1', 0): {'client': client, 'state_path': tmp_path / 'state.json',
+                          'on_revision': lambda *args: revisions.append(args) or {}}}
+    with pytest.raises(StopIteration):
+        listen_forever(tmp_path / 'state.json', tmp_path / 'offset.json',
+                       routes=routes, polling_client=client)
+    assert polls == [0, 11]
+    assert len(revisions) == 1

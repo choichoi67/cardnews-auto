@@ -58,7 +58,7 @@ def test_valid_generated_portraits_are_accepted_once_and_reused_from_cache(tmp_p
 @pytest.mark.parametrize("size", [(768,1024), (1077,1436), (1080,1441), (2048,1536), (1024,1536)])
 def test_generated_images_and_publication_share_minimum_size_and_ratio(tmp_path, size):
     source = tmp_path / "invalid.png"
-    Image.new("RGB", size).save(source)
+    Image.new("RGB", size, "navy").save(source)  # real pixels: this test is about size, not the black-image guard
     with pytest.raises(render.ImageSizeMismatch):
         render._validate_generated_image(source)
     with pytest.raises(RuntimeError):

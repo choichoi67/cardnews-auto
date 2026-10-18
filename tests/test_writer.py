@@ -4,6 +4,37 @@ import pytest
 from cardnews_auto import writer
 from cardnews_auto.models import Article, CardNews, Slide
 
+@pytest.fixture(autouse=True)
+def offline_article_text(monkeypatch):
+    monkeypatch.setattr(writer, "discover_article_text", lambda _: "")
+
+
+@pytest.mark.parametrize("source_text", ["", "부상으로 일정이 미뤄졌다. 회복 후 새 일정을 발표했다."])
+def test_writer_receives_source_context_and_marks_missing_source(monkeypatch, source_text):
+    import json
+    fetched, calls = [], []
+    def fetch(url):
+        fetched.append(url)
+        return source_text
+    def parse(**request):
+        calls.append(request)
+        return SimpleNamespace(output_parsed=editorial_card())
+    monkeypatch.setattr(writer, "discover_article_text", fetch)
+    monkeypatch.setattr(writer, "OpenAI", lambda: SimpleNamespace(responses=SimpleNamespace(parse=parse)))
+    cfg = {"brand": {"name": "test", "handle": "test"}, "news": {"category": "music"},
+           "generation": {"model": "test", "slide_count": 4, "hashtags": 0}}
+    article = Article(title="새 일정", original_title="Rescheduled after recovery",
+                      url="https://example.com/story", summary="일정 발표")
+    writer.create_cardnews([article], cfg)
+    assert fetched == [article.url]
+    user = calls[0]["input"][1]["content"]
+    material = json.JSONDecoder().raw_decode(user.split("후보 뉴스:\n", 1)[1].lstrip())[0][0]
+    assert material["source_text"] == source_text
+    assert material["source_text_status"] == ("extracted_paragraphs" if source_text else "unavailable")
+    assert material["preliminary_summary"] == article.summary
+    assert material["original_title"] == article.original_title
+    assert writer.CONTEXT_PRESERVATION_RULE in calls[0]["input"][0]["content"]
+
 
 def editorial_card():
     return CardNews(topic="새 앨범", rationale="", source_urls=[], caption="", hashtags=[], slides=[
@@ -33,6 +64,40 @@ def test_writer_restores_only_mapped_cover_auxiliary_fields(monkeypatch):
     assert "반드시 채울 필드와 PSD 제한" in captured[0]["input"][1]["content"]
 
 
+def test_connected_story_accepts_unpunctuated_endings_and_preserves_copy():
+    value = editorial_card()
+    value.slides[1].body = "가수가 새 앨범을 발표했고"
+    value.slides[2].body = "이어서 공연 일정도 공개했다"
+    before = [slide.body for slide in value.slides[1:]]
+    writer._normalize_editorial_cards(value, {"max_chars": 72, "line_chars": 24, "max_lines": 3})
+    assert [" ".join(slide.body.split()) for slide in value.slides[1:]] == before
+
+
+@pytest.mark.parametrize("bodies", [
+    ["앨범을 발표했고"],
+    ["앨범을 발표했고.", "공연을 준비하는데", "일정이 바뀌었지만", "발표를 마쳤다"],
+    [""],
+])
+def test_story_rejects_dangling_or_unbounded_connections(bodies):
+    with pytest.raises(RuntimeError):
+        writer._validate_story_endings(bodies)
+
+
+def test_partial_rewrite_receives_neighboring_copy(monkeypatch):
+    captured = {}
+    def parse(**kwargs):
+        captured.update(kwargs)
+        return SimpleNamespace(output_parsed=writer.RevisedText(title="", body="가수가 앨범을 발표했고"))
+    monkeypatch.setattr(writer, "OpenAI", lambda **kwargs: SimpleNamespace(responses=SimpleNamespace(parse=parse)))
+    value = editorial_card()
+    result = writer.rewrite_slide_text(value.slides[1], "배경을 강조한다", Article(title="앨범", url="https://example.com"),
+        {"generation": {"model": "test"}}, card=value, slide_index=1)
+    import json
+    context = json.loads(captured["input"][1]["content"])
+    assert context["next_card"] == value.slides[2].body
+    assert result.body.endswith("했고")
+
+
 def test_cover_auxiliary_copy_and_body_only_cards_preserve_complete_content():
     card = editorial_card()
     original = [s.body for s in card.slides[1:]]
@@ -54,7 +119,7 @@ def test_bad_editorial_units_request_rewrite_without_creating_extra_cards(kind):
     if kind == "long":
         card.slides[1].body = "가수가 새로운 앨범의 제작 과정과 공연 일정에 관한 자세한 설명을 공개했습니다. " * 4
     elif kind == "unfinished":
-        card.slides[1].body = "가수가 새로운 앨범을 발표하고"
+        card.slides[-1].body = "가수가 새로운 앨범을 발표하고"
     elif kind == "duplicate_body":
         card.slides[2].body = card.slides[1].body
     with pytest.raises(RuntimeError):
@@ -121,7 +186,8 @@ def test_unused_body_titles_are_removed_without_second_api_call(monkeypatch):
     assert len(calls) == 1
 
 
-def test_caption_prompt_is_applied_and_approved_title_controls_topic(monkeypatch):
+@pytest.mark.parametrize("channel_tone", ["장난스러운 반말", "격식 있는 존댓말"])
+def test_common_prompts_ignore_channel_style_and_preserve_topic(monkeypatch, channel_tone):
     captured = {}
     article = Article(title="현재 승인된 명곡 뉴스", url="https://example.com/current", source="Source")
     parsed = CardNews(
@@ -150,7 +216,7 @@ def test_caption_prompt_is_applied_and_approved_title_controls_topic(monkeypatch
 
     monkeypatch.setattr(writer, "OpenAI", lambda: SimpleNamespace(responses=Responses()))
     cfg = {
-        "brand": {"name": "외힙명곡", "handle": "@test", "tone": "정확하고 간결하게"},
+        "brand": {"name": "외힙명곡", "handle": "@test", "tone": channel_tone},
         "news": {"category": "외힙명곡"},
         "generation": {
             "model": "test-model",
@@ -159,14 +225,17 @@ def test_caption_prompt_is_applied_and_approved_title_controls_topic(monkeypatch
             "caption_prompt": "**Song - [곡명]** 다음 줄에 **Artist - [아티스트]**",
             "body_prompt": " ",
             "cover_prompt": "",
+            "_revision_instruction": "발매 배경을 강조한다",
         },
     }
 
     result = writer.create_cardnews([article], cfg)
 
     assert result.topic == article.title
-    assert "채널 전용 캡션 작성 규칙" in captured["prompt"]
-    assert "**Song - [곡명]**" in captured["prompt"]
+    assert writer.DEFAULT_CAPTION_PROMPT in captured["prompt"]
+    assert channel_tone not in captured["prompt"]
+    assert "**Song - [곡명]**" not in captured["prompt"]
+    assert "발매 배경을 강조한다" in captured["prompt"]
     assert "첫 번째 후보는 사용자가 승인한 제작 주제" in captured["prompt"]
     assert writer.DEFAULT_BODY_PROMPT in captured["prompt"]
     assert writer.DEFAULT_COVER_PROMPT in captured["prompt"]
@@ -226,11 +295,12 @@ def test_prompt_preserves_factual_cover_and_edited_body_draft(monkeypatch):
     assert captured["model"] == "gpt-6-sol"
     assert "ZERO length restrictions" not in prompt
     assert "Do not count characters" not in prompt
-    assert "채널 고유 문체 유지" in prompt
+    assert "채널 고유 문체 유지" not in prompt
+    assert writer.COMMON_EDITORIAL_TONE in captured["system"]
     assert "정보성 매거진의 표지 헤드라인" in prompt
     assert "근거 없는 숫자·날짜·인용·관계·결과를 추가하지 않습니다" in prompt
     assert "확정된 body_draft를 순서대로 나눈 본문 카드" in prompt
-    assert "각 카드의 마지막 줄은 연결어미로 멈추지 않고" in prompt
+    assert "연결어미로 끝낸 카드는 다음 장이 받아" in prompt
     assert "PSD 배치 엔진이 채널 템플릿의 실제 허용량" in prompt
     assert "20–35 Korean characters per line" not in prompt
     assert "리그면 EPL·라리가·세리에A" not in prompt
@@ -241,6 +311,24 @@ def test_prompt_preserves_factual_cover_and_edited_body_draft(monkeypatch):
     assert "핵심 사실을 모두 보존" in captured["system"]
     assert writer.DEFAULT_BODY_PROMPT in prompt
     assert writer.DEFAULT_COVER_PROMPT in prompt
+
+
+def test_partial_rewrite_uses_common_tone(monkeypatch):
+    captured = {}
+
+    def parse(**kwargs):
+        captured.update(kwargs)
+        return SimpleNamespace(output_parsed=writer.RevisedText(title="", body="새 앨범을 발표했다."))
+
+    monkeypatch.setattr(writer, "OpenAI", lambda **kwargs: SimpleNamespace(responses=SimpleNamespace(parse=parse)))
+    writer.rewrite_slide_text(
+        Slide(role="body", title="", body="원래 문장이다."), "발매 배경을 강조한다",
+        Article(title="앨범 발표", url="https://example.com"),
+        {"generation": {"model": "test"}, "brand": {"tone": "채널 전용 말투"}},
+    )
+    assert writer.COMMON_EDITORIAL_TONE in captured["input"][0]["content"]
+    assert "채널 전용 말투" not in str(captured["input"])
+    assert "발매 배경을 강조한다" in captured["input"][1]["content"]
 
 
 def test_clean_caption_removes_links_sources_and_markdown_bold():
@@ -307,7 +395,7 @@ def test_cover_prompt_uses_psd_capacity_and_normalizes_title(monkeypatch):
     assert all(len(line) <= 10 for line in result.slides[0].title.split("\n"))
 
 
-def test_channel_cover_prompt_is_applied_with_psd_override(monkeypatch):
+def test_common_cover_prompt_ignores_channel_override_and_preserves_psd_limits(monkeypatch):
     captured = {}
     article = Article(title="아이스-T 새 앨범", url="https://example.com/news", source="Example")
     parsed = CardNews(
@@ -355,8 +443,7 @@ def test_channel_cover_prompt_is_applied_with_psd_override(monkeypatch):
 
     writer.create_cardnews([article], cfg)
 
-    assert "전사 공통 표지 규칙과 채널 추가 규칙" in captured["prompt"]
-    assert "첫 줄에는 핵심 주체" in captured["prompt"]
+    assert "첫 줄에는 핵심 주체, 둘째 줄에는 구체적인 사건을 씁니다." not in captured["prompt"]
     assert "실제 PSD 제한(2줄, 줄당 10자, 전체 20자)" in captured["prompt"]
     assert writer.DEFAULT_COVER_PROMPT in captured["prompt"]
 
@@ -383,6 +470,7 @@ def test_uploaded_channel_cover_capacity_replaces_legacy_base_capacity():
 
 
 def test_total_slide_overflow_requests_bounded_rewrite(monkeypatch):
+    monkeypatch.setattr(writer, "discover_article_text", lambda _: "원문에만 있는 배경과 이유")
     article = Article(title="승인 기사",url="https://example.com/news")
     def make(count):
         return CardNews(topic=article.title,rationale="",source_urls=[article.url],caption="",hashtags=["뉴스"],slides=[
@@ -399,7 +487,10 @@ def test_total_slide_overflow_requests_bounded_rewrite(monkeypatch):
          "template":{"body":{"text_options":{"body":{"max_chars":96,"line_chars":24,"max_lines":4}}}}}
     result=writer.create_cardnews([article],cfg)
     assert len(result.slides)==12 and len(calls)==2
+    assert all(writer.COMMON_EDITORIAL_TONE in call["input"][0]["content"] for call in calls)
     retry=calls[1]["input"][1]["content"]
+    assert "원문에만 있는 배경과 이유" in retry
+    assert all(writer.CONTEXT_PRESERVATION_RULE in call["input"][0]["content"] for call in calls)
     assert "본문은 최대 11장" in retry and "72자 이하" in retry
     assert "표현과 사실을 그대로 유지" not in retry
 

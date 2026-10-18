@@ -63,6 +63,15 @@ def test_runtime_rejects_bad_order_and_path(source, tmp_path):
         asset_path(root, "../sample.psd")
 
 
+def test_deleted_layer_stays_removed_after_save_and_can_be_restored(source, tmp_path):
+    root = tmp_path / "bundle"
+    import_psd(source, root)
+    edit = api.LayerEdit(deleted=True, visible=True).model_dump(exclude_none=True)
+    (root / "edits.json").write_text(json.dumps({"changes": {"layer-001": edit}}))
+    assert render(root).getpixel((3, 2)) == (255, 0, 0, 255)
+    assert render(root, {"layer-001": {"deleted": False}}).getpixel((3, 2)) == (0, 0, 255, 255)
+
+
 def test_import_does_not_overwrite(source, tmp_path):
     root = tmp_path / "bundle"
     root.mkdir()
@@ -88,6 +97,17 @@ def test_api_upload_save_reopen_export_and_validation(source, tmp_path, monkeypa
     data = response.json()
     item = f"{route}/{data['id']}"
     assert client.get(route).json() == [{"id": data["id"], "name": "cover"}]
+    role_ids = []
+    for role in ('cover', 'body', 'cta'):
+        upload = client.post(route, data={'role': role}, files={'file': ('shared.psd', source.read_bytes())})
+        assert upload.status_code == 200, upload.text
+        draft = upload.json()
+        assert client.get(f"{route}/{draft['id']}").json()['role'] == role
+        retry = client.post(route, data={'role': role}, files={'file': ('shared.psd', source.read_bytes())})
+        assert retry.json()['id'] == draft['id']
+        role_ids.append(draft['id'])
+    assert len(set(role_ids + [data['id']])) == 4
+    assert client.post(route, data={'role': 'invalid'}, files={'file': ('shared.psd', source.read_bytes())}).status_code == 422
     assert client.post(item + "/render", json={"changes": {"layer-001": {"visible": False}}, "revision": 0}).status_code == 200
     assert client.get(item).json()["edits"]["changes"]["layer-001"]["visible"] is False
     assert client.post(item + "/render", json={"order": ["bad"], "revision": 1}).status_code == 400

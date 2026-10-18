@@ -6,7 +6,12 @@ image_transform:
   fallback_quality: ''
   max_transformed_slides: 50
   max_parallel: 2
+  timeout_seconds: 300
   use_original_on_failure: true
+  # Card image rule: 1) real photo of the card's scene, 2) otherwise an AI reconstruction (labelled in the caption)
+  scene_check: true
+  scene_check_model: gpt-6-luna
+  scene_check_limit: 6
   size: 1536x2048
   prompt: 'Edit Image 1 conservatively. Preserve identity, face,
 
@@ -38,4 +43,4 @@ image_sources:
   rss:
     enabled: true
     max_images_per_article: 12
-    same_site_only: true
+    same_site_only: false

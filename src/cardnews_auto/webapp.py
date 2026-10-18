@@ -95,7 +95,7 @@ def _public_profile(profile: dict) -> dict:
         "image_prompt": cfg.get("image_transform", {}).get("prompt", ""),
         "web_image_search_enabled": cfg.get("image_sources", {}).get("web_search", {}).get("enabled", True),
         "rss_image_enabled": cfg.get("image_sources", {}).get("rss", {}).get("enabled", True),
-        "rss_image_same_site_only": cfg.get("image_sources", {}).get("rss", {}).get("same_site_only", True),
+        "rss_image_same_site_only": cfg.get("image_sources", {}).get("rss", {}).get("same_site_only", False),
         "caption_prompt": cfg.get("generation", {}).get("caption_prompt", ""),
         "body_prompt": cfg.get("generation", {}).get("body_prompt", DEFAULT_BODY_PROMPT),
         "cover_prompt": cfg.get("generation", {}).get("cover_prompt", DEFAULT_COVER_PROMPT),
@@ -296,6 +296,11 @@ def retry_job(job_id: str) -> dict:
     )
     return job
 
+
+# Official PhotoCraft web release, served unchanged (same Rust UI/engine as desktop).
+_photocraft_web = ROOT / '.tools' / 'photocraft' / 'photocraft-web-0.10.0'
+if _photocraft_web.is_dir():
+    app.mount('/photocraft', StaticFiles(directory=_photocraft_web, html=True), name='photocraft')
 
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 

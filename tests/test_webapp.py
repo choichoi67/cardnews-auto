@@ -66,8 +66,8 @@ def test_profile_has_grounded_body_prompt_by_default():
     assert "editorial_summary" in payload.body_prompt
     assert "body_draft" in payload.body_prompt
     assert "핵심 사실과 수치를 왜곡하지 않습니다" in payload.body_prompt
-    assert "2~3줄 분량의 완결된 문장" in payload.body_prompt
-    assert "미완성 문장과 중복 내용을 고칩니다" in payload.body_prompt
+    assert "2~3줄 분량" in payload.body_prompt
+    assert "연결형은 다음 장에서 받아 마무리" in payload.body_prompt
 
 
 def test_profile_has_two_line_cover_prompt_by_default():
@@ -374,12 +374,12 @@ def test_retry_of_photoshop_job_uses_current_design_and_photo_mode(monkeypatch, 
     import copy
     psd = str(tmp_path / "cover.psd")
     frozen = {"article": {"title": "Test", "url": "https://example.com/test"},
-              "build_config": {"generation": {"model": "frozen-model"}, "template": {
+              "build_config": {"image_transform": {"timeout_seconds": 90}, "generation": {"model": "frozen-model"}, "template": {
                   "cover": {"psd_path": psd, "text_options": {"title": {"max_chars": 20}}},
                   "body": {"psd_path": str(tmp_path / "other.psd")}}}}
     monkeypatch.setattr(dashboard_jobs, "get_job", lambda _: {"id": "old", "profile_id": "a", "action": "build", "status": "failed"})
     monkeypatch.setattr(dashboard_jobs, "build_snapshot", lambda _: copy.deepcopy(frozen))
-    monkeypatch.setattr(dashboard_jobs, "profile_config", lambda _: {"image_transform": {"recompose_for_publication": True, "model": "grok-imagine-image-2.0"}, "template": {"cover": {
+    monkeypatch.setattr(dashboard_jobs, "profile_config", lambda _: {"image_transform": {"timeout_seconds": 300, "recompose_for_publication": True, "model": "grok-imagine-image-2.0"}, "template": {"cover": {
         "psd_path": psd, "text_options": {"title": {"max_chars": 40, "allowed_bounds": [70, 930, 1010, 1220]}}}}})
     captured = {}
     def enqueue(*args, **kwargs):
@@ -391,6 +391,7 @@ def test_retry_of_photoshop_job_uses_current_design_and_photo_mode(monkeypatch, 
     assert result["generation"]["model"] == "frozen-model"
     assert result["image_transform"]["recompose_for_publication"] is True
     assert result["image_transform"]["model"] == "grok-imagine-image-2.0"
+    assert result["image_transform"]["timeout_seconds"] == 300
     # A job frozen with Photoshop templates retries with the channel's current studio design.
     assert result["template"]["cover"]["text_options"]["title"] == {
         "max_chars": 40, "allowed_bounds": [70, 930, 1010, 1220]}

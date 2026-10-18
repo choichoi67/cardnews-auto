@@ -16,7 +16,7 @@ test('shortcuts reuse controls without stealing text, IME, modal or busy input',
       focus() { this.focused = true; },
       click() { if (!this.disabled) this.clicks++; },
       showModal() { this.open = true; }, close() { this.open = false; },
-      dispatchEvent() { this.changed = true; },
+      dispatchEvent(event) { this.changed = true; this.lastEvent = event; },
       getBoundingClientRect() { return {width: 1080}; },
       querySelector: selector => element(selector),
     });
@@ -32,6 +32,7 @@ test('shortcuts reuse controls without stealing text, IME, modal or busy input',
   vm.runInNewContext(readFileSync(path.join(__dirname, '../src/cardnews_auto/web/static/template-lab-photocraft.js'), 'utf8'), {
     document, window: {addEventListener: (name, handler) => { windowHandlers[name] = handler; }},
     MutationObserver: class { observe() {} }, Event: class {},
+    CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } },
   });
   function press(key, options = {}) {
     const event = {key, target: {closest: () => null}, preventDefault() { this.prevented = true; }, stopPropagation() {}, ...options};
@@ -48,9 +49,15 @@ test('shortcuts reuse controls without stealing text, IME, modal or busy input',
   press('t', {isComposing: true});
   assert.equal(element('[data-prop="text"]').focused, undefined);
   press('t');
-  assert.equal(element('[data-prop="text"]').focused, true);
+  assert.equal(element('lab-stage').lastEvent.detail, 'text');
   press('g');
-  assert.equal(element('[data-prop="gradient.angle"]').focused, true);
+  assert.equal(element('lab-stage').lastEvent.detail, 'gradient');
+  for (const [key, tool] of Object.entries({c:'crop',u:'shape',i:'eyedropper',p:'photo',f:'transform',z:'zoom'})) {
+    press(key);
+    assert.equal(element('lab-stage').lastEvent.detail, tool);
+  }
+  element('lab-viewport').listeners.click({altKey: true, preventDefault() {}, stopPropagation() {}});
+  assert.equal(element('lab-zoom').value, '0.75');
   press('0', {ctrlKey: true});
   assert.equal(element('lab-zoom').value, 'fit');
   press('+', {ctrlKey: true, shiftKey: true});

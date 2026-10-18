@@ -202,7 +202,7 @@ def retry_job(job_id: str, profile: dict, args: list[str] | None = None) -> dict
         snapshot = build_snapshot(job_id) if original["action"] == "build" else {}
         if snapshot.get("build_config"):
             current_config = profile_config(profile)
-            for option in ("recompose_for_publication", "model"):
+            for option in ("recompose_for_publication", "model", "timeout_seconds"):
                 if option in current_config.get("image_transform", {}):
                     snapshot["build_config"].setdefault("image_transform", {})[option] = current_config["image_transform"][option]
             if current_config.get("template", {}).get("publication_frame") == "exact":
@@ -292,8 +292,8 @@ def _run_job(job_id: str, profile: dict, action: str, args: list[str]) -> None:
             if any(marker in error for marker in ("billing_hard_limit_reached", "insufficient_quota")):
                 error = "OpenAI API 사용 한도에 도달했습니다. API 결제수단·월 사용 한도를 확인한 뒤 재시도하세요."
             tracker.send("실패" if return_code else "완료", error if return_code else "작업이 완료됐습니다.", force=True)
-            if action == "build" and not return_code:
-                notify_build(profile, status, job_id, topic=topic)
+            if action == "build":
+                notify_build(profile, status, job_id, detail=error if return_code else "", topic=topic)
 
 
 

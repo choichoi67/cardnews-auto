@@ -46,10 +46,26 @@ def test_new_channel_inherits_common_policy(tmp_path, monkeypatch):
     from cardnews_auto import dashboard_core
     monkeypatch.setattr(dashboard_core, 'ROOT', tmp_path)
     (tmp_path / 'config.yaml').write_text(yaml.safe_dump({'generation': {}, 'brand': {}, 'news': {}}), encoding='utf-8')
-    path = write_profile_config({"id":"a", "config_path":str(tmp_path / "config.yaml")}, ProfileInput(name="A",category="music",image_transform_enabled=False,image_prompt="ignored"))
+    path = write_profile_config({"id":"a", "config_path":str(tmp_path / "config.yaml")}, ProfileInput(
+        name="A", category="music", image_transform_enabled=False, image_prompt="ignored",
+        web_image_search_enabled=False, rss_image_enabled=False,
+        cover_prompt="ignored", body_prompt="ignored", caption_prompt="ignored",
+        pages=["https://example.com/news"], feeds=["https://example.com/rss"],
+        schedule_enabled=True, collection_times=["08:30"]))
     cfg = yaml.safe_load(path.read_text(encoding="utf-8"))
     common = policy.apply_image_policy({})
     assert cfg["image_transform"] == common["image_transform"]
+    assert cfg["image_sources"]["web_search"]["enabled"] is True
+    assert cfg["image_sources"]["rss"]["enabled"] is True
+    assert cfg["image_sources"]["rss"]["same_site_only"] is False
+    from cardnews_auto.writer import DEFAULT_BODY_PROMPT, DEFAULT_COVER_PROMPT, DEFAULT_CAPTION_PROMPT
+    assert cfg["generation"]["body_prompt"] == DEFAULT_BODY_PROMPT
+    assert cfg["generation"]["cover_prompt"] == DEFAULT_COVER_PROMPT
+    assert cfg["generation"]["caption_prompt"] == DEFAULT_CAPTION_PROMPT
+    assert cfg["news"]["pages"][0]["url"] == "https://example.com/news"
+    assert cfg["news"]["feeds"] == ["https://example.com/rss"]
+    assert cfg["schedule"]["enabled"] is True
+    assert cfg["schedule"]["times"] == ["08:30"]
     assert "approved_set" not in cfg["template"]
     with pytest.raises(RuntimeError, match="승인된 템플릿"):
         policy.approved_template(cfg)
