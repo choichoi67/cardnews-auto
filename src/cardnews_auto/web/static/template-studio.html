@@ -1,0 +1,32 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NOWA 템플릿 제작</title><link rel="stylesheet" href="/styles.css?v=studio-20261016-final"><link rel="stylesheet" href="/template-studio.css?v=studio-20261016-final"></head><body class="template-studio"><main>      <section id="view-template-lab" class="view-panel">
+        <section class="panel lab-panel">
+          <header class="studio-heading"><div><small>NOWA / TEMPLATE STUDIO</small><h1>템플릿 제작</h1></div><a href="/">편집국으로 돌아가기</a></header>
+          <p class="studio-intro">원본 보관 → 초안 편집 → 버전 저장·적용</p>
+          <form id="lab-upload" class="lab-toolbar">
+            <label>채널<select id="lab-channel" required></select></label>
+            <label>PSD 파일<input id="lab-file" type="file" accept=".psd" required></label>
+            <button class="button primary" type="submit">PSD 가져오기</button>
+          </form>
+          <section id="studio-slots" class="studio-slots" aria-label="채널별 활성 템플릿"></section><label class="lab-library">작업 중인 초안<select id="lab-library"><option value="">템플릿을 선택하세요</option></select></label>
+          <p id="lab-status" role="status" aria-live="polite">채널과 PSD를 선택하세요. 초안을 저장한 뒤 표지·본문·CTA로 적용하세요.</p>
+          <div id="lab-editor" hidden>
+            <p id="lab-comparison"></p>
+            <details><summary>재현 범위와 주의점</summary><ul id="lab-warnings"></ul></details>
+            <div class="lab-workbench">
+              <div class="lab-document">
+                <div class="lab-document-bar"><strong id="lab-document-name">캔버스</strong><label>확대<select id="lab-zoom"><option value="fit">화면 맞춤</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.5">150%</option></select></label><label><input id="lab-original" type="checkbox">원본 비교</label><button id="lab-undo" type="button">실행 취소</button><button id="lab-redo" type="button">다시 실행</button><label><input id="lab-guides" type="checkbox">안전 여백</label></div>
+                <div id="lab-viewport" class="lab-viewport"><div id="lab-stage" class="lab-stage" tabindex="0" aria-label="편집 캔버스. 선택한 레이어를 드래그하거나 방향키로 이동하세요."><img id="lab-preview" alt="편집 중인 PSD 캔버스" draggable="false"><img id="lab-reference" alt="PSD에 저장된 원본" hidden draggable="false"><div class="studio-safe" hidden></div><div id="lab-selection" hidden><button type="button" id="lab-resize" aria-label="비율을 유지하며 크기 조절"></button></div></div></div>
+                <p class="lab-canvas-help">레이어를 선택한 뒤 테두리를 드래그하세요 · 방향키 1px / Shift + 방향키 10px · Ctrl+Z 실행 취소</p>
+              </div>
+              <aside class="lab-inspector"><h3>레이어 <small>위쪽이 앞면</small></h3><div id="lab-layers"></div></aside><aside class="studio-properties"><section id="lab-properties" aria-label="선택 레이어 속성"></section></aside>
+            </div>
+            <details class="studio-publish"><summary>버전 저장 · 채널에 적용</summary><p>저장한 초안을 새 버전으로 보관하고 이 역할에 적용합니다. CTA는 마지막 장에 고정 디자인으로 추가됩니다.</p><div class="studio-mapping"><label>역할<select id="lab-role"><option value="cover">표지</option><option value="body">본문</option><option value="cta">CTA</option></select></label><label data-mapping>기사 글자 레이어<select id="lab-text-layer"></select></label><label data-mapping>기사 사진 레이어<select id="lab-image-layer"></select></label><label data-mapping data-cover>배지 글자 레이어<select id="lab-eyebrow-layer"></select></label><label data-mapping data-cover>배지 상자 레이어 (글자 길이에 맞춰 폭 조절 · AI 배지 색 대상)<select id="lab-badge-layer"></select></label><label data-mapping data-cover>보조 글자 레이어<select id="lab-caption-layer"></select></label><label data-mapping>최대 글자 수<input id="lab-max-chars" type="number" min="1" max="2000" value="80"></label><label data-mapping>줄당 글자 수<input id="lab-line-chars" type="number" min="1" max="200" value="20"></label><label data-mapping>최대 줄 수<input id="lab-max-lines" type="number" min="1" max="30" value="4"></label></div><button id="lab-publish" type="button" class="button primary">저장한 버전을 채널에 적용</button></details><div class="lab-actions">
+              <button id="lab-render" class="button primary" type="button">초안 저장</button>
+              <button id="lab-reset" class="button secondary" type="button">원래 레이어 설정 복원</button>
+              <a id="lab-download" class="button secondary">저장된 Python 템플릿 받기</a>
+            </div>
+          </div>
+        </section>
+      </section>
+
+</main><script src="/studio-common.js?v=studio-20261016-final"></script><script src="/template-studio.js?v=studio-20261016-final"></script></body></html>

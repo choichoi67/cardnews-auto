@@ -1,0 +1,45 @@
+# 복사해서 config.yaml로 저장한 뒤 값을 채우세요. config.yaml은 깃에 올라가지 않습니다.
+# 이미지 검색·편집 설정은 image-policy.yaml이 모든 채널에 공통으로 적용합니다.
+brand:
+  name: 내 매거진
+  handle: '@your_handle'
+  tone: 정보 밀도가 높고 간결한 한국어
+magazine:
+  id: my-magazine
+  name: 내 매거진
+news:
+  category: 해외 힙합·R&B
+  language: ko
+  lookback_hours: 168
+  max_candidates: 10
+  summarize_in_korean: true
+  pages: []
+  feeds:
+  - https://news.google.com/rss/search?q=hip+hop&hl=en-US&gl=US&ceid=US:en
+  required_keywords: []
+  blocked_keywords: []
+schedule:
+  enabled: false
+  timezone: Asia/Seoul
+  times:
+  - 09:00
+generation:
+  model: gpt-6-sol
+  research_enabled: true
+  slide_count: auto
+  min_slides: 4
+  max_slides: 12
+  hashtags: 8
+  caption_prompt: ''
+template:
+  publication_frame: exact
+drive:
+  enabled: false
+  folder_id: ''
+  root_folder_name: Cardnews Auto
+  credentials_file: credentials.json
+  token_file: token.json
+telegram:
+  enabled: false
+  chat_id: ''
+  max_candidates: 10

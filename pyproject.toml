@@ -1,0 +1,38 @@
+[project]
+name = "cardnews-auto"
+version = "0.1.0"
+description = "RSS에서 주제를 선정하고 템플릿 제작 버전으로 카드뉴스와 캡션을 생성해 Google Drive로 전송합니다."
+requires-python = ">=3.11"
+dependencies = [
+  "feedparser>=6.0.11",
+  "fastapi>=0.116.0",
+  "openai>=1.68.0",
+  "Pillow>=11.0.0",
+  "numpy>=1.26",
+  "python-multipart>=0.0.20",
+  "psd-tools>=1.10.6",
+  "pydantic>=2.10.0",
+  "PyYAML>=6.0.2",
+  "requests>=2.32.0",
+  "google-api-python-client>=2.160.0",
+  "google-auth>=2.38.0",
+  "google-auth-oauthlib>=1.2.1",
+  "uvicorn>=0.35.0",
+]
+
+[project.scripts]
+cardnews-auto = "cardnews_auto.cli:main"
+cardnews-dashboard = "cardnews_auto.webapp:main"
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+cardnews_auto = ["web/static/*"]

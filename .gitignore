@@ -1,0 +1,22 @@
+.env
+.venv/
+.tools/
+__pycache__/
+*.pyc
+credentials.json
+token.json
+output/*
+!output/.gitkeep
+state/*
+!state/.gitkeep
+# Channel settings stay private: prompts, Drive folder, Telegram chat, PC paths (see config.example.yaml)
+config.yaml
+magazines/
+# Design data stays on the production PC: PSD originals (large) and studio versions (absolute paths)
+templates/originals/
+templates/channels/
+# Tool and build leftovers
+*.egg-info/
+.pytest_cache/
+.omc/
+*.log

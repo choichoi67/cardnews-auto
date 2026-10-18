@@ -1,0 +1,41 @@
+image_transform:
+  recompose_for_publication: true
+  enabled: true
+  model: grok-imagine-image-2.0
+  quality: high
+  fallback_quality: ''
+  max_transformed_slides: 50
+  max_parallel: 2
+  use_original_on_failure: true
+  size: 1536x2048
+  prompt: 'Edit Image 1 conservatively. Preserve identity, face,
+
+    expression, hair, skin, body, outfit, logos, colors and lighting. Keep the subject''s
+
+    natural proportions and scene context while composing for the requested output
+    canvas.
+
+    Only if visible, adjust arms/hands slightly; never invent hidden limbs or add/remove
+
+    people, objects or text. Improve sharpness and texture; stay photorealistic.
+
+
+    FINAL CANVAS CONTRACT: exactly 1536 pixels wide by 2048 pixels tall, portrait
+    3:4. The source image is a subject reference, NOT the output canvas or aspect
+    ratio. Compose one continuous edge-to-edge photograph for this canvas. Extend
+    scene background naturally where needed, preserving the subject''s identity and
+    factual scene context. Keep a natural medium-shot scale with breathing room around
+    the subject; no face close-up. No borders, letterboxing, blurred padding, duplicate
+    panels, stretching, text or new people. This exact composition will be published
+    at 1080x1440 by proportional downsampling only; no later crop or zoom. This canvas
+    contract overrides conflicting framing instructions.'
+image_sources:
+  web_search:
+    enabled: true
+    model: gpt-6-luna
+    results_per_query: 6
+    max_queries_per_article: 2
+  rss:
+    enabled: true
+    max_images_per_article: 12
+    same_site_only: true

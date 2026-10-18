@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f1f8">
+  <title>NOWA Cardnews Studio</title>
+  <link rel="stylesheet" href="/styles.css?v=studio-20261016-final">
+<link rel="stylesheet" href="/template-studio.css?v=studio-20261016-final">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">본문으로 바로가기</a>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+  <div class="ambient ambient-three" aria-hidden="true"></div>
+
+  <div class="shell">
+    <aside class="sidebar" aria-label="매거진 채널">
+      <div class="brand-mark">
+        <span aria-hidden="true">N</span>
+        <div><b>NOWA</b><small>CONTENT STUDIO</small></div>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="side-label">CHANNELS</p>
+        <nav id="magazine-list" class="magazine-list" aria-label="채널 목록"></nav>
+        <button id="new-profile" class="new-profile" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          새 채널
+        </button>
+      </div>
+
+      <a class="studio-nav" href="/template-studio.html">템플릿 제작</a>
+      <div class="system-card" aria-label="연결 상태">
+        <div class="system-title"><span>연결 상태</span><small>LIVE</small></div>
+        <div><span id="openai-dot" class="dot"></span><b>OpenAI</b><small>원고·배치</small></div>
+        <div><span id="telegram-dot" class="dot"></span><b>Telegram</b><small>승인·전송</small></div>
+        <div><span id="drive-dot" class="dot"></span><b>Google Drive</b><small>산출물 저장</small></div>
+      </div>
+    </aside>
+
+    <main id="main-content" class="main" tabindex="-1">
+      <div id="data-status" role="status" aria-live="polite" style="padding:12px;border:1px solid #c8b5e8;border-radius:12px;margin-bottom:12px"><span id="data-status-message">기존 채널과 작업 데이터를 불러오는 중입니다…</span> <button id="data-retry" type="button" hidden>다시 불러오기</button></div>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">AI CONTENT OPERATIONS</p>
+          <h1 id="profile-title">외국 힙합</h1>
+          <p id="profile-category" class="subtitle">해외 힙합 · R&amp;B</p>
+        </div>
+        <div class="top-actions">
+          <button id="edit-profile" class="button secondary" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.96 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3v-4h.08A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7l2.83-2.83.06.06a1.7 1.7 0 0 0 1.88.34A1.7 1.7 0 0 0 10 3.01V3h4v.08a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06L19.8 7l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            채널 설정
+          </button>
+          <button id="collect" class="button primary" type="button">
+            <span class="button-label">뉴스 수집 시작</span><span class="spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+      </header>
+
+      <section class="workflow-strip" aria-labelledby="workflow-heading">
+        <div class="workflow-copy">
+          <p class="eyebrow">AUTOMATION FLOW</p>
+          <h2 id="workflow-heading">오늘의 제작 흐름</h2>
+        </div>
+        <ol class="workflow-steps">
+          <li class="active"><span>1</span><b>수집</b></li>
+          <li><span>2</span><b>검토</b></li>
+          <li><span>3</span><b>승인</b></li>
+          <li><span>4</span><b>AI 제작</b></li>
+          <li><span>5</span><b>Drive</b></li>
+          <li><span>6</span><b>Telegram</b></li>
+        </ol>
+      </section>
+
+      <section class="metrics" aria-label="운영 요약">
+        <article><small>현재 단계</small><strong id="workflow-status">대기</strong><span id="workflow-detail">새로운 수집을 시작하세요</span></article>
+        <article><small>검토할 뉴스</small><strong id="candidate-count">0</strong><span>누적 뉴스 후보</span></article>
+        <article><small>완성 카드</small><strong id="output-count">0</strong><span>최근 제작 산출물</span></article>
+        <article><small>자동 수집</small><strong id="schedule-status">꺼짐</strong><span id="schedule-next">예약 수집 미사용</span></article>
+      </section>
+
+      <nav class="workspace-tabs" role="tablist" aria-label="작업 화면">
+        <button id="view-tab-queue" class="workspace-tab active" type="button" role="tab" aria-selected="true" aria-controls="view-queue" data-view="queue">뉴스 후보 <span id="queue-tab-count">0</span></button>
+        <button id="view-tab-production" class="workspace-tab" type="button" role="tab" aria-selected="false" aria-controls="view-production" data-view="production" tabindex="-1">제작·전송</button>
+        <button id="view-tab-outputs" class="workspace-tab" type="button" role="tab" aria-selected="false" aria-controls="view-outputs" data-view="outputs" tabindex="-1">산출물 <span id="output-tab-count">0</span></button>
+
+      </nav>
+
+      <section id="live-build-status" class="live-build-status" aria-live="polite" hidden>
+        <span class="live-build-spinner" aria-hidden="true"></span>
+        <div><strong>카드뉴스 제작 중</strong><p id="live-build-detail">승인된 주제를 처리하고 있습니다.</p></div>
+      </section>
+
+      <section id="view-queue" class="view-panel" role="tabpanel" aria-labelledby="view-tab-queue">
+        <section class="panel candidates-panel" aria-labelledby="candidates-heading">
+          <div class="panel-head">
+            <div><p class="eyebrow">EDITORIAL QUEUE</p><h2 id="candidates-heading">뉴스 후보</h2></div>
+            <span id="collected-at" class="muted">아직 수집하지 않음</span>
+          </div>
+          <div id="newsroom-filters" class="queue-filters" aria-label="전체 뉴스 후보 필터" hidden>
+            <label class="queue-search">
+              <span>후보 검색</span>
+              <input id="newsroom-search" type="search" placeholder="제목 또는 요약 검색" autocomplete="off">
+            </label>
+            <label>
+              <span>매거진</span>
+              <select id="newsroom-magazine-filter"><option value="all">전체 매거진</option></select>
+            </label>
+            <label>
+              <span>상태</span>
+              <select id="newsroom-status-filter">
+                <option value="open">검토 필요</option>
+                <option value="all">전체 기록</option>
+                <option value="approved">승인됨</option>
+                <option value="built">제작 완료</option>
+                <option value="held">보류</option>
+                <option value="hidden">숨김</option>
+              </select>
+            </label>
+          </div>
+          <div id="candidate-list" class="candidate-list empty-state">뉴스 수집을 시작하면 최신 후보가 표시됩니다.</div>
+        </section>
+      </section>
+
+      <section id="view-production" class="view-panel" role="tabpanel" aria-labelledby="view-tab-production" hidden>
+        <section class="panel health-panel" aria-labelledby="health-heading">
+          <div class="panel-head">
+            <div><p class="eyebrow">CHANNEL HEALTH</p><h2 id="health-heading">채널 운영 상태</h2></div>
+            <span id="health-summary" class="muted">상태 확인 중</span>
+          </div>
+          <div id="health-list" class="health-list empty-state" aria-live="polite">채널 상태를 불러오고 있습니다.</div>
+        </section>
+
+        <div class="production-grid">
+          <section class="panel production-panel" aria-labelledby="production-heading">
+            <div class="panel-head"><div><p class="eyebrow">PRODUCTION</p><h2 id="production-heading">승인 및 제작</h2></div></div>
+            <div id="approved-card" class="approved-card empty">승인된 주제가 없습니다.</div>
+            <div class="production-actions">
+              <button id="send-telegram" class="button secondary" type="button"><span class="button-label">Telegram 재전송</span><span class="spinner" aria-hidden="true"></span></button>
+            </div>
+          </section>
+
+          <section class="panel jobs-panel" aria-labelledby="activity-heading">
+            <div class="panel-head"><div><p class="eyebrow">ACTIVITY</p><h2 id="activity-heading">실행 기록</h2></div></div>
+            <div id="job-list" class="job-list" aria-live="polite"></div>
+          </section>
+        </div>
+
+        <section class="panel audit-panel" aria-labelledby="audit-heading">
+          <div class="panel-head">
+            <div><p class="eyebrow">AUDIT TRAIL</p><h2 id="audit-heading">운영 변경 기록</h2></div>
+            <span class="muted">최근 60건</span>
+          </div>
+          <div id="audit-list" class="audit-list empty-state" aria-live="polite">아직 기록된 운영 변경이 없습니다.</div>
+        </section>
+      </section>
+
+      <section id="view-outputs" class="view-panel" role="tabpanel" aria-labelledby="view-tab-outputs" hidden>
+        <section class="panel output-panel" aria-labelledby="output-heading">
+          <div class="panel-head"><div><p class="eyebrow">DELIVERABLES</p><h2 id="output-heading">채널 산출물</h2><p class="output-intro">완성본을 확인하고 수정본이나 새로운 버전을 바로 제작하세요.</p></div><span class="muted">게시물 단위로 표시</span></div>
+          <div id="output-gallery" class="output-gallery empty-state">제작이 완료되면 카드뉴스가 표시됩니다.</div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="profile-dialog" aria-labelledby="dialog-title">
+    <form id="profile-form" method="dialog" novalidate>
+      <div class="dialog-head">
+        <div><p class="eyebrow">CHANNEL SETTINGS</p><h2 id="dialog-title">새 채널</h2><p>수집, 디자인 모듈, 전송 방식을 한곳에서 관리합니다.</p></div>
+        <button type="button" id="close-dialog" class="icon-button" aria-label="설정 닫기">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <nav class="settings-tabs" role="tablist" aria-label="채널 설정 항목">
+        <button id="settings-tab-basic" class="settings-tab active" type="button" role="tab" aria-selected="true" aria-controls="settings-basic" data-settings-tab="basic">기본 정보</button>
+        <button id="settings-tab-sources" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-sources" data-settings-tab="sources" tabindex="-1">수집·일정</button>
+        <button id="settings-tab-design" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-design" data-settings-tab="design" tabindex="-1">AI 디자인</button>
+        <button id="settings-tab-caption" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-caption" data-settings-tab="caption" tabindex="-1">원고 프롬프트</button>
+        <button id="settings-tab-delivery" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-delivery" data-settings-tab="delivery" tabindex="-1">전송·이미지</button>
+      </nav>
+
+      <div class="form-grid">
+        <section id="settings-basic" class="settings-page" role="tabpanel" aria-labelledby="settings-tab-basic" data-settings-panel="basic">
+        <h3 class="form-section-title wide">채널의 기본 정보를 설정하세요</h3>
+        <label>매거진 이름<input name="name" required placeholder="예: 글로벌 스트리트 패션"></label>
+        <label>카테고리<input name="category" required placeholder="예: 해외 힙합 · R&B"></label>
+        <label>브랜드명<input name="brand_name" value="NOWA"></label>
+        <label>Instagram 핸들<input name="handle" value="@your_handle"></label>
+        <label>카드 장수 <small>0이면 기사에 맞춰 자동 결정</small><input name="slide_count" type="number" min="0" max="30" value="0" inputmode="numeric"></label>
+        <label>1회 수집 기사 수<input name="collection_size" type="number" min="1" max="50" value="10" inputmode="numeric"></label>
+        <label class="wide">편집 톤<textarea name="tone" rows="2" placeholder="정보 밀도가 높고 간결한 한국어"></textarea></label>
+        </section>
+
+        <section id="settings-sources" class="settings-page" role="tabpanel" aria-labelledby="settings-tab-sources" data-settings-panel="sources" hidden>
+        <h3 class="form-section-title wide">슬라이드 이미지 수집 규칙</h3>
+        <label class="check wide"><input name="web_image_search_enabled" type="checkbox" checked disabled> OpenAI 웹 이미지 검색 우선</label>
+        <label class="check"><input name="rss_image_enabled" type="checkbox" checked disabled> RSS 원문 이미지 폴백 허용</label>
+        <label class="check"><input name="rss_image_same_site_only" type="checkbox" checked disabled> RSS 기사와 같은 사이트·CDN만 허용</label>
+        <h3 class="form-section-title wide">뉴스 소스와 자동 수집 시간을 관리하세요</h3>
+        <label class="wide">뉴스 사이트 URL <small>한 줄에 하나</small><textarea name="pages" rows="3" inputmode="url"></textarea></label>
+        <label class="wide">RSS URL <small>한 줄에 하나</small><textarea name="feeds" rows="3" inputmode="url"></textarea></label>
+        <label class="check wide"><input name="schedule_enabled" type="checkbox"> 예약 수집 사용</label>
+        <label>하루 수집 횟수<select name="schedule_count"></select></label>
+        <div id="schedule-times" class="schedule-times wide"></div>
+        </section>
+
+        <section id="settings-design" class="settings-page" role="tabpanel" aria-labelledby="settings-tab-design" data-settings-panel="design" hidden>
+<div class="wide"><h3>채널 템플릿</h3><p>표지·본문·CTA의 편집과 저장은 템플릿 제작에서 관리합니다. 기존 버전은 보관됩니다.</p><a class="button primary" href="/template-studio.html">템플릿 제작 열기</a></div>
+        </section>
+
+        <section id="settings-caption" class="settings-page caption-settings" role="tabpanel" aria-labelledby="settings-tab-caption" data-settings-panel="caption" hidden>
+        <h3 class="form-section-title wide">채널 전용 표지 헤드라인을 설정하세요</h3>
+        <label class="wide">표지 생성 프롬프트
+          <small>뉴스 가치 선택, 두 줄 구성, 금지 표현과 말투를 설정합니다. 실제 PSD 글자 수 제한은 항상 우선합니다.</small>
+          <textarea name="cover_prompt" rows="13" maxlength="12000"></textarea>
+        </label>
+        <h3 class="form-section-title wide">채널 전용 본문 흐름을 설정하세요</h3>
+        <label class="wide">본문 생성 프롬프트
+          <small>요약 순서, 말투, 문장 수와 슬라이드별 줄 배치 규칙을 설정합니다.</small>
+          <textarea name="body_prompt" rows="13" maxlength="8000"></textarea>
+        </label>
+        <aside class="caption-tip wide" aria-label="본문 근거 규칙">
+          <strong>근거 사용 순서</strong>
+          <p>승인된 RSS 기사를 1차 근거로 사용하고, 웹·커뮤니티·공개 인스타그램 검색은 교차 확인과 실제 반응 보강에만 사용합니다.</p>
+        </aside>
+        <h3 class="form-section-title wide">채널 전용 캡션 형식을 설정하세요</h3>
+        <label class="wide">캡션 생성 프롬프트
+          <small>제목 형식, 문단 순서, 필수 표기와 말투를 예시처럼 구체적으로 작성하세요.</small>
+          <textarea name="caption_prompt" rows="16" maxlength="8000" placeholder="예: 첫 줄은 **✅ [뉴스] ...** 형식으로 시작하고 마지막에 Song과 Artist를 표기한다."></textarea>
+        </label>
+        <aside class="caption-tip wide" aria-label="캡션 프롬프트 작성 도움말">
+          <strong>고정 형식 유지 방법</strong>
+          <p>변하지 않는 문구는 그대로 적고, 기사마다 달라질 부분은 대괄호로 설명하세요. AI가 이 규칙을 일반 캡션 지침보다 우선 적용합니다.</p>
+        </aside>
+        </section>
+
+        <section id="settings-delivery" class="settings-page" role="tabpanel" aria-labelledby="settings-tab-delivery" data-settings-panel="delivery" hidden>
+        <h3 class="form-section-title wide">저장·승인·이미지 처리 방식을 설정하세요</h3>
+        <label>Drive 폴더 ID<input name="drive_folder_id"></label>
+        <label>채널 테마 색상<input name="color" type="color" value="#7c3aed"></label>
+        <label class="check"><input name="telegram_enabled" type="checkbox" checked> Telegram 승인 사용</label>
+        <label>Telegram 전용 방 ID<input name="telegram_chat_id" pattern="-?[0-9]{1,20}" placeholder="-123456789"></label>
+        <label>토픽 ID (일반 방은 0)<input name="telegram_thread_id" type="number" min="0" value="0"></label>
+        <label>봇 토큰 환경변수 이름<input name="telegram_bot_token_env" value="TELEGRAM_BOT_TOKEN" pattern="TELEGRAM_[A-Z0-9_]*TOKEN"></label>
+        <p class="wide">기존 봇을 채널 전용 방에 초대하고 방 ID를 저장하세요. 토큰 자체는 입력하지 않습니다. 그룹에서는 관리자만 승인·재제작할 수 있습니다. 설정 변경은 수신기 재연결 후 반영됩니다.</p>
+        <label class="check"><input name="drive_enabled" type="checkbox"> 제작 후 Drive 업로드</label>
+        <label class="check"><input name="image_transform_enabled" type="checkbox" checked disabled> AI 참고이미지 편집 · 전 채널 공통</label>
+        <div class="wide"><strong id="shared-image-policy">전 채널 공통 이미지 정책</strong><p>참고사진 기반 Grok 편집 · 중복 검사 · 3:4 고해상도 · 실패 시 대체 이미지. 템플릿을 바꿔도 생성 규칙은 유지됩니다.</p></div>
+        <label class="wide" hidden>공통 정책<input name="image_prompt" type="hidden"></label>
+        </section>
+      </div>
+      <div class="dialog-actions"><button type="button" id="cancel-dialog" class="button secondary">취소</button><button type="submit" class="button primary"><span class="button-label">설정 저장</span><span class="spinner" aria-hidden="true"></span></button></div>
+    </form>
+  </dialog>
+
+  <dialog id="script-review-dialog" class="script-review-dialog" aria-labelledby="script-review-title">
+    <form method="dialog">
+      <header class="dialog-head">
+        <div>
+          <p class="eyebrow">EDITORIAL REVIEW</p>
+          <h2 id="script-review-title">원고 검수</h2>
+          <p id="script-review-topic"></p>
+        </div>
+        <button class="icon-button" type="submit" aria-label="원고 검수 닫기">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <nav class="script-review-tabs" role="tablist" aria-label="원고 검수 단계">
+        <button type="button" role="tab" data-script-review-tab="interpretation" aria-controls="script-panel-interpretation">1. 원문 해석</button>
+        <button type="button" role="tab" class="active" data-script-review-tab="summary" aria-controls="script-panel-summary" aria-selected="true">2. 편집 요약</button>
+        <button type="button" role="tab" data-script-review-tab="draft" aria-controls="script-panel-draft">3. 본문 초안</button>
+      </nav>
+      <div class="script-review-content">
+        <section id="script-panel-interpretation" class="script-review-panel" role="tabpanel" data-script-review-panel="interpretation" hidden>
+          <span>STEP 01 · INTERPRET</span>
+          <h3>원문의 의미를 보존한 한국어 해석</h3>
+          <p id="script-interpretation"></p>
+        </section>
+        <section id="script-panel-summary" class="script-review-panel" role="tabpanel" data-script-review-panel="summary">
+          <span>STEP 02 · SUMMARIZE</span>
+          <h3>카드 배치 전에 검수하는 편집 요약</h3>
+          <p id="script-summary"></p>
+        </section>
+        <section id="script-panel-draft" class="script-review-panel" role="tabpanel" data-script-review-panel="draft" hidden>
+          <span>STEP 03 · WRITE FIRST</span>
+          <h3>줄바꿈하기 전 완성된 본문 원고</h3>
+          <p id="script-body-draft"></p>
+        </section>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="revision-dialog" class="revision-dialog" aria-labelledby="revision-title">
+    <form id="revision-form">
+      <header class="revision-head">
+        <button type="button" id="close-revision" class="revision-back" aria-label="산출물 목록으로 돌아가기">
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          목록으로
+        </button>
+        <div><p class="eyebrow">AI REVISION STUDIO</p><h2 id="revision-title">산출물 수정</h2></div>
+        <span id="revision-channel" class="channel-pill"></span>
+      </header>
+      <div class="revision-layout">
+        <section class="revision-controls" aria-labelledby="revision-guide-title">
+          <div class="revision-controls-scroll">
+            <div>
+              <p class="eyebrow">REVISION BRIEF</p>
+              <h3 id="revision-guide-title">어떤 부분을 바꿀까요?</h3>
+              <p>기존 결과물은 보존되고, 수정본은 새로운 버전으로 제작됩니다.</p>
+            </div>
+            <div class="selected-slide-card">
+              <span id="selected-slide-number">01</span>
+              <div><small>선택한 카드</small><strong id="selected-slide-role">표지</strong></div>
+            </div>
+            <input name="slide_number" type="hidden" value="1">
+            <input name="cover_title" type="hidden" value="">
+            <p id="revision-notice" role="status"></p>
+            <input type="hidden" name="replace_text" value="true">
+            <label>수정 종류<select name="instruction_target"><option value="text">글 수정</option><option value="image">사진 AI 편집</option></select></label>
+            <label>1. 수정 지시사항
+              <textarea name="instruction" rows="6" maxlength="3000" placeholder="예: 표지 문구를 더 강하게 바꾸고, 인물 이미지를 더 크게 배치해주세요."></textarea>
+            </label>
+            <button type="button" id="preview-rewrite" class="button">원고 수정안 확인</button>
+            <p>글 수정안은 입력칸에 표시됩니다. 확인한 뒤 제작하세요. 사진 편집 지시는 제작할 때 적용됩니다.</p>
+            <label>2. 선택한 카드 제목 <small>현재 카드 제목을 직접 수정합니다.</small>
+              <textarea name="slide_title" rows="3" maxlength="500" placeholder="카드 제목을 입력하세요."></textarea>
+            </label>
+            <label>3. 선택한 카드 본문 <small>표지·본문·CTA에 들어가는 설명 문구입니다.</small>
+              <textarea name="slide_body" rows="5" maxlength="3000" placeholder="카드 본문을 입력하세요."></textarea>
+            </label>
+            <label class="reference-drop">4. 참고 이미지 <small>JPG, PNG, WebP · 1080×1440으로 자동 맞춤</small>
+              <input name="reference_image" type="file" accept="image/jpeg,image/png,image/webp">
+              <span id="reference-name">이미지를 선택하거나 끌어다 놓으세요</span>
+            </label>
+            <div class="revision-note">
+              <strong>제작 흐름</strong>
+              <span>수정 요청 → 공통 대기열 → PSD 제작 → Drive 새 폴더 → Telegram 완료 알림</span>
+            </div>
+          </div>
+          <footer class="revision-action-bar">
+            <span><b id="revision-action-number">01</b>번 카드 수정본을 새 버전으로 제작합니다.</span>
+            <button id="submit-revision" class="button primary revision-submit" type="submit">
+              <span class="button-label">수정본 제작하기</span><span class="spinner" aria-hidden="true"></span>
+            </button>
+          </footer>
+        </section>
+        <section class="revision-preview" aria-label="원본과 수정 버전 미리보기">
+          <div id="revision-versions" class="revision-versions"></div>
+          <figure>
+            <img id="revision-cover" alt="수정할 카드뉴스 표지" width="1080" height="1440">
+            <figcaption><strong id="revision-topic"></strong><span id="revision-date"></span></figcaption>
+          </figure>
+          <div class="revision-slide-tray">
+            <div class="revision-slide-tray-head">
+              <strong>수정할 카드 선택</strong>
+              <span>표지 · 본문 · CTA</span>
+            </div>
+            <div id="revision-slides" class="revision-slides" aria-label="수정할 카드 선택"></div>
+          </div>
+        </section>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/ui.js?v=studio-20261016-final"></script>
+  <script src="/app.js?v=studio-20261016-final"></script>
+
+</body>
+</html>
